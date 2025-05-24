@@ -70,8 +70,25 @@ const NodeCard: FC<Props> = ({ node, onClose, nodes, edges, addEdge, removeEdge,
       <Close onClick={onClose}>×</Close>
       <h3>{node.label}</h3>
       <p>ID: {node.id}</p>
-      <p>Phone: {node.phone}</p>
-      <p>Address: {node.address}</p>
+      {/* Profile visibility enforcement */}
+      {(() => {
+        const isFriend = edges.some(
+          e => (e.from === node.id && e.to === userId) || (e.from === userId && e.to === node.id)
+        );
+        const canViewProfile =
+          profileVisibility === 'public' ||
+          (profileVisibility === 'friends' && isFriend) ||
+          (profileVisibility === 'private' && (node.id === userId || isAdmin));
+        if (canViewProfile) {
+          return (
+            <>
+              <p>Phone: {node.phone}</p>
+              <p>Address: {node.address}</p>
+            </>
+          );
+        }
+        return <p>Profile information not visible</p>;
+      })()}
       {node.id !== userId && (
         <div>
           <h4>Friendship</h4>
