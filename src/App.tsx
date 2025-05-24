@@ -2,12 +2,11 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import GraphCanvas from './components/GraphCanvas';
 import NodeCard from './components/NodeCard';
-import AddPersonForm from './components/AddPersonForm';
 import Login from './components/Login';
 import { useGraphData, NodeData } from './hooks/useGraphData';
 
-// Mock user database
-const mockUsers = [
+// Initial mock users
+const initialUsers = [
   { id: '1', email: 'alice@example.com', password: 'alicepwd', label: 'Alice' },
   { id: '2', email: 'bob@example.com', password: 'bobpwd', label: 'Bob' },
   { id: '3', email: 'carol@example.com', password: 'carolpwd', label: 'Carol' }
@@ -33,21 +32,37 @@ const Container = styled.div`
 `;
 
 export default function App() {
+  const [users, setUsers] = useState(initialUsers);
   const [user, setUser] = useState<{ id: string; email: string; label: string } | null>(null);
   const [selected, setSelected] = useState<NodeData | null>(null);
-  const { nodes, edges, addNode, addEdge, removeEdge } = useGraphData(user?.id);
+  const { nodes, edges, addNode, addEdge, removeEdge, updateNode } = useGraphData(user?.id);
 
-  // If not authenticated, show login screen
+  // Authentication handlers
+  const loginHandler = (email: string, password: string): boolean => {
+    const found = users.find(u => u.email === email && u.password === password);
+    if (found) {
+      setUser(found);
+      return true;
+    }
+    return false;
+  };
+  const signupHandler = (
+    email: string,
+    password: string,
+    label: string,
+    phone?: string,
+    address?: string
+  ) => {
+    const id = Date.now().toString();
+    const newUser = { id, email, password, label };
+    setUsers(prev => [...prev, newUser]);
+    // Create node in graph for this user
+    addNode({ label, phone, address });
+    setUser(newUser);
+  };
+  // If not authenticated, show login/signup screen
   if (!user) {
-    return (
-      <Login
-        onLogin={(email, password) => {
-          const found = mockUsers.find(u => u.email === email && u.password === password);
-          if (found) setUser(found);
-          else alert('Invalid credentials');
-        }}
-      />
-    );
+    return <Login onLogin={loginHandler} onSignup={signupHandler} />;
   }
 
   return (
@@ -56,7 +71,6 @@ export default function App() {
         <span>Welcome, {user.label}</span>
         <button onClick={() => setUser(null)}>Logout</button>
       </Header>
-      <AddPersonForm onAdd={addNode} />
       <GraphCanvas nodes={nodes} edges={edges} onNodeClick={setSelected} />
       {selected && (
         <NodeCard
@@ -65,6 +79,8 @@ export default function App() {
           edges={edges}
           addEdge={addEdge}
           removeEdge={removeEdge}
+          updateNode={updateNode}
+          userId={user.id}
           onClose={() => setSelected(null)}
         />
       )}

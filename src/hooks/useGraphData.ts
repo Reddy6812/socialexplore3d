@@ -80,5 +80,12 @@ export function useGraphData(userId?: string) {
     );
   };
 
-  return { nodes, edges, addNode, addEdge, removeEdge };
+  /** Update node data by id */
+  const updateNode = (id: string, data: Partial<Omit<NodeData, 'id' | 'position'>>) => {
+    setNodes(prev =>
+      prev.map(n => (n.id === id ? { ...n, ...data } : n))
+    );
+  };
+
+  return { nodes, edges, addNode, addEdge, removeEdge, updateNode };
 } 
