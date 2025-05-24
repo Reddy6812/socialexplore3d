@@ -1,6 +1,6 @@
 import React, { FC, useState } from 'react';
 import styled from 'styled-components';
-import { NodeData, EdgeData } from '../hooks/useGraphData';
+import { NodeData, EdgeData, FriendRequest } from '../hooks/useGraphData';
 
 const Card = styled.div`
   position: absolute;
@@ -33,9 +33,13 @@ interface Props {
   updateNode: (id: string, data: Partial<Omit<NodeData, 'id' | 'position'>>) => void;
   userId: string;
   isAdmin: boolean;
+  friendRequests: FriendRequest[];
+  sendRequest: (from: string, to: string) => void;
+  approveRequest: (requestId: string) => void;
+  declineRequest: (requestId: string) => void;
 }
 
-const NodeCard: FC<Props> = ({ node, onClose, nodes, edges, addEdge, removeEdge, updateNode, userId, isAdmin }) => {
+const NodeCard: FC<Props> = ({ node, onClose, nodes, edges, addEdge, removeEdge, updateNode, userId, isAdmin, friendRequests, sendRequest, approveRequest, declineRequest }) => {
   const otherNodes = nodes.filter(n => n.id !== node.id);
   const [selectedFriend, setSelectedFriend] = useState('');
   const [mutualList, setMutualList] = useState<NodeData[]>([]);
