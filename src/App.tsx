@@ -44,9 +44,24 @@ const SettingsPanel = styled.div`
   z-index: 10;
 `;
 
+const SearchPanel = styled.div`
+  position: absolute;
+  top: 80px;
+  left: 10px;
+  background: white;
+  padding: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border-radius: 4px;
+  z-index: 10;
+  ul { list-style: none; margin: 4px 0 0; padding: 0; }
+  li { margin: 4px 0; }
+  button { background: none; border: none; text-align: left; padding: 4px; cursor: pointer; width: 100%; }
+`;
+
 export default function App() {
   const [users, setUsers] = useState(initialUsers);
   const [user, setUser] = useState<{ id: string; email: string; label: string; showConnections: boolean; isAdmin: boolean } | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const [showSettings, setShowSettings] = useState(false);
   const [selected, setSelected] = useState<NodeData | null>(null);
   const { nodes, edges, friendRequests, sendFriendRequest, approveFriendRequest, declineFriendRequest, addNode, addEdge, removeEdge, updateNode } = useGraphData(user?.isAdmin ? undefined : user?.id);
@@ -80,6 +95,14 @@ export default function App() {
     return <Login onLogin={loginHandler} onSignup={signupHandler} />;
   }
 
+  // Admin search results
+  const searchResults = user.isAdmin && searchTerm
+    ? nodes.filter(n =>
+        n.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        n.id.includes(searchTerm)
+      )
+    : [];
+
   return (
     <Container>
       <Header>
@@ -87,6 +110,32 @@ export default function App() {
         <button onClick={() => setUser(null)}>Logout</button>
         <button onClick={() => setShowSettings(prev => !prev)}>Settings</button>
       </Header>
+      {user.isAdmin && (
+        <SearchPanel>
+          <input
+            type="text"
+            placeholder="Search users"
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+          />
+          {searchTerm && (
+            <ul>
+              {searchResults.map(n => (
+                <li key={n.id}>
+                  <button
+                    onClick={() => {
+                      setSelected(n);
+                      setSearchTerm('');
+                    }}
+                  >
+                    {n.label} ({n.id})
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </SearchPanel>
+      )}
       {showSettings && user && (
         <SettingsPanel>
           <label>
