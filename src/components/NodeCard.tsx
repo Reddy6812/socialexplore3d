@@ -1,6 +1,8 @@
 import React, { FC, useState } from 'react';
 import styled from 'styled-components';
 import { NodeData, EdgeData, FriendRequest } from '../hooks/useGraphData';
+import { Post } from '../hooks/usePostData';
+import PostForm from './PostForm';
 
 const Card = styled.div`
   position: absolute;
@@ -37,9 +39,11 @@ interface Props {
   sendRequest: (from: string, to: string) => void;
   approveRequest: (requestId: string) => void;
   declineRequest: (requestId: string) => void;
+  posts: Post[];
+  onAddPost: (authorId: string, imageUrl: string, visibility: Post['visibility']) => void;
 }
 
-const NodeCard: FC<Props> = ({ node, onClose, nodes, edges, addEdge, removeEdge, updateNode, userId, isAdmin, friendRequests, sendRequest, approveRequest, declineRequest }) => {
+const NodeCard: FC<Props> = ({ node, onClose, nodes, edges, addEdge, removeEdge, updateNode, userId, isAdmin, friendRequests, sendRequest, approveRequest, declineRequest, posts, onAddPost }) => {
   const otherNodes = nodes.filter(n => n.id !== node.id);
   const [selectedFriend, setSelectedFriend] = useState('');
   const [mutualList, setMutualList] = useState<NodeData[]>([]);
@@ -106,6 +110,35 @@ const NodeCard: FC<Props> = ({ node, onClose, nodes, edges, addEdge, removeEdge,
               )}
             </div>
           )}
+          {node.id === userId && (
+            <div>
+              <h4>New Post</h4>
+              <PostForm authorId={node.id} onAddPost={onAddPost} />
+            </div>
+          )}
+          <h4>Posts</h4>
+          <ul>
+            {posts.filter(p => {
+              if (p.authorId !== node.id) return false;
+              // owner or admin always sees
+              if (userId === node.id || isAdmin) return true;
+              // public posts visible to all
+              if (p.visibility === 'public') return true;
+              // friends-only: check connection
+              if (p.visibility === 'friends') {
+                return edges.some(
+                  e => (e.from === node.id && e.to === userId) || (e.from === userId && e.to === node.id)
+                );
+              }
+              // private posts only owner/admin
+              return false;
+            }).map(p => (
+              <li key={p.id}>
+                <img src={p.imageUrl} alt="Post" style={{ maxWidth: '100%' }} />
+                <p>Visibility: {p.visibility}</p>
+              </li>
+            ))}
+          </ul>
           <h4>Connections</h4>
           <ul>
             {otherNodes.map(other => {
