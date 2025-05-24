@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import GraphCanvas from './components/GraphCanvas';
-import NodeCard from './components/NodeCard.tsx';
+import NodeCard from './components/NodeCard';
 import AddPersonForm from './components/AddPersonForm';
 import { useGraphData, NodeData } from './hooks/useGraphData';
 
