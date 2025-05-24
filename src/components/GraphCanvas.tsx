@@ -1,9 +1,11 @@
 import React, { FC, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
-import { useGraphData, NodeData, EdgeData } from '../hooks/useGraphData';
+import { NodeData, EdgeData } from '../hooks/useGraphData';
 
 interface Props {
+  nodes: NodeData[];
+  edges: EdgeData[];
   onNodeClick: (node: NodeData) => void;
 }
 
@@ -37,8 +39,7 @@ const EdgeLine: FC<{ edge: EdgeData; nodeMap: Record<string, NodeData> }> = ({ e
   );
 };
 
-export default function GraphCanvas({ onNodeClick }: Props) {
-  const { nodes, edges } = useGraphData();
+export default function GraphCanvas({ nodes, edges, onNodeClick }: Props) {
   const nodeMap = Object.fromEntries(nodes.map(n => [n.id, n]));
 
   return (
