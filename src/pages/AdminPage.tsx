@@ -9,6 +9,7 @@ interface AdminPageProps {
   user: any;
   users: any[];
   graph: ReturnType<typeof useGraphData>;
+  postData: ReturnType<typeof usePostData>;
 }
 
 const Container = styled.div`
@@ -17,8 +18,8 @@ const Container = styled.div`
   position: relative;
 `;
 
-const AdminPage: FC<AdminPageProps> = ({ user, users, graph }) => {
-  const postData = usePostData();
+const AdminPage: FC<AdminPageProps> = ({ user, users, graph, postData }) => {
+  const { posts, addPost, deletePost } = postData;
   const [selected, setSelected] = useState<NodeData | null>(null);
 
   return (
@@ -38,8 +39,9 @@ const AdminPage: FC<AdminPageProps> = ({ user, users, graph }) => {
           updateNode={graph.updateNode}
           userId={user.id}
           isAdmin={user.isAdmin}
-          posts={postData.posts}
-          onAddPost={postData.addPost}
+          posts={posts}
+          onAddPost={addPost}
+          onDeletePost={deletePost}
           profileVisibility={users.find(u => u.id === selected.id)?.profileVisibility ?? 'public'}
           onClose={() => setSelected(null)}
         />

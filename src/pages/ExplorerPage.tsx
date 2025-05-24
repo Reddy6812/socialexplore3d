@@ -37,6 +37,7 @@ const ExplorerPage: FC<ExplorerPageProps> = ({ user, users, graph, postData }) =
           isAdmin={user.isAdmin}
           posts={postData.posts}
           onAddPost={postData.addPost}
+          onDeletePost={postData.deletePost}
           profileVisibility={users.find(u => u.id === selected.id)?.profileVisibility ?? 'public'}
           onClose={() => setSelected(null)}
         />

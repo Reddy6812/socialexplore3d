@@ -42,9 +42,10 @@ interface Props {
   profileVisibility: 'public' | 'friends' | 'private';
   posts: Post[];
   onAddPost: (authorId: string, imageUrl: string, visibility: Post['visibility']) => void;
+  onDeletePost: (postId: string) => void;
 }
 
-const NodeCard: FC<Props> = ({ node, onClose, nodes, edges, addEdge, removeEdge, updateNode, userId, isAdmin, friendRequests, sendRequest, approveRequest, declineRequest, profileVisibility, posts, onAddPost }) => {
+const NodeCard: FC<Props> = ({ node, onClose, nodes, edges, addEdge, removeEdge, updateNode, userId, isAdmin, friendRequests, sendRequest, approveRequest, declineRequest, profileVisibility, posts, onAddPost, onDeletePost }) => {
   const otherNodes = nodes.filter(n => n.id !== node.id);
   const [selectedFriend, setSelectedFriend] = useState('');
   const [mutualList, setMutualList] = useState<NodeData[]>([]);
@@ -183,6 +184,11 @@ const NodeCard: FC<Props> = ({ node, onClose, nodes, edges, addEdge, removeEdge,
               <li key={p.id}>
                 <img src={p.imageUrl} alt="Post" style={{ maxWidth: '100%' }} />
                 <p>Visibility: {p.visibility}</p>
+                {(userId === node.id || isAdmin) && (
+                  <button onClick={() => onDeletePost(p.id)} style={{ marginTop: '4px', fontSize: '12px' }}>
+                    Delete
+                  </button>
+                )}
               </li>
             ))}
           </ul>
