@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import GraphCanvas from './components/GraphCanvas';
 import NodeCard from './components/NodeCard';
 import AddPersonForm from './components/AddPersonForm';
+import Login from './components/Login';
 import { useGraphData, NodeData } from './hooks/useGraphData';
 
 const Container = styled.div`
@@ -12,8 +13,13 @@ const Container = styled.div`
 `;
 
 export default function App() {
+  const [user, setUser] = useState<{ email: string } | null>(null);
   const [selected, setSelected] = useState<NodeData | null>(null);
   const { nodes, edges, addNode, addEdge, removeEdge } = useGraphData();
+
+  if (!user) {
+    return <Login onLogin={(email, password) => setUser({ email })} />;
+  }
 
   return (
     <Container>
