@@ -39,11 +39,12 @@ interface Props {
   sendRequest: (from: string, to: string) => void;
   approveRequest: (requestId: string) => void;
   declineRequest: (requestId: string) => void;
+  profileVisibility: 'public' | 'friends' | 'private';
   posts: Post[];
   onAddPost: (authorId: string, imageUrl: string, visibility: Post['visibility']) => void;
 }
 
-const NodeCard: FC<Props> = ({ node, onClose, nodes, edges, addEdge, removeEdge, updateNode, userId, isAdmin, friendRequests, sendRequest, approveRequest, declineRequest, posts, onAddPost }) => {
+const NodeCard: FC<Props> = ({ node, onClose, nodes, edges, addEdge, removeEdge, updateNode, userId, isAdmin, friendRequests, sendRequest, approveRequest, declineRequest, profileVisibility, posts, onAddPost }) => {
   const otherNodes = nodes.filter(n => n.id !== node.id);
   const [selectedFriend, setSelectedFriend] = useState('');
   const [mutualList, setMutualList] = useState<NodeData[]>([]);
