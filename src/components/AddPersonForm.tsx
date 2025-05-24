@@ -2,7 +2,7 @@ import React, { FC, useState } from 'react';
 import styled from 'styled-components';
 
 interface Props {
-  onAdd: (label: string) => void;
+  onAdd: (node: { id: string; label: string; phone: string; address: string }) => void;
 }
 
 const Form = styled.form`
@@ -34,22 +34,46 @@ const Button = styled.button`
 `;
 
 const AddPersonForm: FC<Props> = ({ onAdd }) => {
+  const [id, setId] = useState('');
   const [label, setLabel] = useState('');
+  const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!label.trim()) return;
-    onAdd(label.trim());
+    if (!id.trim() || !label.trim()) return;
+    onAdd({ id: id.trim(), label: label.trim(), phone: phone.trim(), address: address.trim() });
+    setId('');
     setLabel('');
+    setPhone('');
+    setAddress('');
   };
 
   return (
     <Form onSubmit={handleSubmit}>
       <Input
         type="text"
+        placeholder="ID"
+        value={id}
+        onChange={e => setId(e.target.value)}
+      />
+      <Input
+        type="text"
         placeholder="Name"
         value={label}
         onChange={e => setLabel(e.target.value)}
+      />
+      <Input
+        type="text"
+        placeholder="Phone"
+        value={phone}
+        onChange={e => setPhone(e.target.value)}
+      />
+      <Input
+        type="text"
+        placeholder="Address"
+        value={address}
+        onChange={e => setAddress(e.target.value)}
       />
       <Button type="submit">Add Person</Button>
     </Form>

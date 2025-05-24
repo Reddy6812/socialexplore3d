@@ -3,6 +3,8 @@ import { useState } from 'react';
 export interface NodeData {
   id: string;
   label: string;
+  phone: string;
+  address: string;
   position: [number, number, number];
 }
 
@@ -12,9 +14,9 @@ export interface EdgeData {
 }
 
 const initialNodes: NodeData[] = [
-  { id: '1', label: 'Alice', position: [0, 0, 0] },
-  { id: '2', label: 'Bob', position: [2, 1, 0] },
-  { id: '3', label: 'Carol', position: [-2, 1, 0] }
+  { id: '1', label: 'Alice', phone: '', address: '', position: [0, 0, 0] },
+  { id: '2', label: 'Bob', phone: '', address: '', position: [2, 1, 0] },
+  { id: '3', label: 'Carol', phone: '', address: '', position: [-2, 1, 0] }
 ];
 
 const initialEdges: EdgeData[] = [
@@ -24,17 +26,31 @@ const initialEdges: EdgeData[] = [
 
 export function useGraphData() {
   const [nodes, setNodes] = useState<NodeData[]>(initialNodes);
-  const [edges] = useState<EdgeData[]>(initialEdges);
+  const [edges, setEdges] = useState<EdgeData[]>(initialEdges);
 
-  const addNode = (label: string) => {
-    const id = Date.now().toString();
+  const addNode = (node: Omit<NodeData, 'position'>) => {
     const position: [number, number, number] = [
       (Math.random() - 0.5) * 4,
       (Math.random() - 0.5) * 4,
       0
     ];
-    setNodes(prev => [...prev, { id, label, position }]);
+    setNodes(prev => [...prev, { ...node, position }]);
   };
 
-  return { nodes, edges, addNode };
+  const addEdge = (from: string, to: string) => {
+    setEdges(prev => {
+      if (prev.some(e => (e.from === from && e.to === to) || (e.from === to && e.to === from))) {
+        return prev;
+      }
+      return [...prev, { from, to }];
+    });
+  };
+
+  const removeEdge = (from: string, to: string) => {
+    setEdges(prev =>
+      prev.filter(e => !((e.from === from && e.to === to) || (e.from === to && e.to === from)))
+    );
+  };
+
+  return { nodes, edges, addNode, addEdge, removeEdge };
 } 

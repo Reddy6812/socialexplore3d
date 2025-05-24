@@ -1,6 +1,6 @@
 import React, { FC, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
+import { OrbitControls, Html } from '@react-three/drei';
 import { NodeData, EdgeData } from '../hooks/useGraphData';
 
 interface Props {
@@ -15,10 +15,17 @@ const NodeSphere: FC<{ node: NodeData; onClick: () => void }> = ({ node, onClick
     ref.current.rotation.y += 0.01;
   });
   return (
-    <mesh ref={ref} position={node.position} onClick={onClick}>
-      <sphereGeometry args={[0.2, 16, 16]} />
-      <meshStandardMaterial color="#00aaff" />
-    </mesh>
+    <group position={node.position}>
+      <mesh ref={ref} onClick={onClick}>
+        <sphereGeometry args={[0.2, 16, 16]} />
+        <meshStandardMaterial color="#00aaff" />
+      </mesh>
+      <Html center distanceFactor={10} style={{ pointerEvents: 'none' }}>
+        <div style={{ background: 'rgba(255,255,255,0.8)', padding: '2px 4px', borderRadius: '4px', fontSize: '10px' }}>
+          {node.id}
+        </div>
+      </Html>
+    </group>
   );
 };
 
