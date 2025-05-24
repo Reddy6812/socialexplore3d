@@ -4,12 +4,14 @@ import GraphCanvas from './components/GraphCanvas';
 import NodeCard from './components/NodeCard';
 import Login from './components/Login';
 import { useGraphData, NodeData } from './hooks/useGraphData';
+import { usePostData } from './hooks/usePostData';
 
-// Initial mock users
+// Initial mock users (admin & regular)
 const initialUsers = [
-  { id: '1', email: 'alice@example.com', password: 'alicepwd', label: 'Alice', showConnections: true },
-  { id: '2', email: 'bob@example.com', password: 'bobpwd', label: 'Bob', showConnections: true },
-  { id: '3', email: 'carol@example.com', password: 'carolpwd', label: 'Carol', showConnections: true }
+  { id: '0', email: 'admin@example.com', password: 'adminpwd', label: 'Admin', showConnections: true, isAdmin: true },
+  { id: '1', email: 'alice@example.com', password: 'alicepwd', label: 'Alice', showConnections: true, isAdmin: false },
+  { id: '2', email: 'bob@example.com', password: 'bobpwd', label: 'Bob', showConnections: true, isAdmin: false },
+  { id: '3', email: 'carol@example.com', password: 'carolpwd', label: 'Carol', showConnections: true, isAdmin: false }
 ];
 
 const Header = styled.div`
@@ -44,10 +46,11 @@ const SettingsPanel = styled.div`
 
 export default function App() {
   const [users, setUsers] = useState(initialUsers);
-  const [user, setUser] = useState<{ id: string; email: string; label: string; showConnections: boolean } | null>(null);
+  const [user, setUser] = useState<{ id: string; email: string; label: string; showConnections: boolean; isAdmin: boolean } | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [selected, setSelected] = useState<NodeData | null>(null);
-  const { nodes, edges, addNode, addEdge, removeEdge, updateNode } = useGraphData(user?.id);
+  const { nodes, edges, friendRequests, sendFriendRequest, approveFriendRequest, declineFriendRequest, addNode, addEdge, removeEdge, updateNode } = useGraphData(user?.isAdmin ? undefined : user?.id);
+  const { posts, addPost } = usePostData();
 
   // Authentication handlers
   const loginHandler = (email: string, password: string): boolean => {
@@ -66,7 +69,7 @@ export default function App() {
     address?: string
   ) => {
     const id = Date.now().toString();
-    const newUser = { id, email, password, label, showConnections: true };
+    const newUser = { id, email, password, label, showConnections: true, isAdmin: false };
     setUsers(prev => [...prev, newUser]);
     // Create node in graph for this user
     addNode({ label, phone, address });
@@ -93,10 +96,10 @@ export default function App() {
               onChange={() => {
                 if (!user) return;
                 const newShow = !user.showConnections;
-                setUser({ ...user, showConnections: newShow });
+                setUser({ ...user, showConnections: newShow, isAdmin: user.isAdmin });
                 setUsers(prev =>
                   prev.map(u =>
-                    u.id === user.id ? { ...u, showConnections: newShow } : u
+                    u.id === user.id ? { ...u, showConnections: newShow, isAdmin: u.isAdmin } : u
                   )
                 );
               }}
@@ -115,10 +118,17 @@ export default function App() {
           node={selected}
           nodes={nodes}
           edges={edges}
+          friendRequests={friendRequests}
+          sendRequest={sendFriendRequest}
+          approveRequest={approveFriendRequest}
+          declineRequest={declineFriendRequest}
           addEdge={addEdge}
           removeEdge={removeEdge}
           updateNode={updateNode}
           userId={user.id}
+          isAdmin={user.isAdmin}
+          posts={posts}
+          onAddPost={addPost}
           onClose={() => setSelected(null)}
         />
       )}
