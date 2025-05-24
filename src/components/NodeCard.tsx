@@ -32,9 +32,10 @@ interface Props {
   removeEdge: (from: string, to: string) => void;
   updateNode: (id: string, data: Partial<Omit<NodeData, 'id' | 'position'>>) => void;
   userId: string;
+  isAdmin: boolean;
 }
 
-const NodeCard: FC<Props> = ({ node, onClose, nodes, edges, addEdge, removeEdge, updateNode, userId }) => {
+const NodeCard: FC<Props> = ({ node, onClose, nodes, edges, addEdge, removeEdge, updateNode, userId, isAdmin }) => {
   const otherNodes = nodes.filter(n => n.id !== node.id);
   const [selectedFriend, setSelectedFriend] = useState('');
   const [mutualList, setMutualList] = useState<NodeData[]>([]);
@@ -62,90 +63,94 @@ const NodeCard: FC<Props> = ({ node, onClose, nodes, edges, addEdge, removeEdge,
       <p>ID: {node.id}</p>
       <p>Phone: {node.phone}</p>
       <p>Address: {node.address}</p>
-      {node.id === userId && (
-        <div>
-          {editing ? (
+      {(node.id === userId || isAdmin) && (
+        <>
+          {node.id === userId && (
             <div>
-              <h4>Edit Profile</h4>
-              <input
-                type="text"
-                value={editLabel}
-                onChange={e => setEditLabel(e.target.value)}
-              />
-              <input
-                type="text"
-                value={editPhone}
-                placeholder="Phone"
-                onChange={e => setEditPhone(e.target.value)}
-              />
-              <input
-                type="text"
-                value={editAddress}
-                placeholder="Address"
-                onChange={e => setEditAddress(e.target.value)}
-              />
-              <button
-                onClick={() => {
-                  updateNode(node.id, { label: editLabel, phone: editPhone, address: editAddress });
-                  setEditing(false);
-                }}
-              >
-                Save
-              </button>
-              <button onClick={() => setEditing(false)}>Cancel</button>
-            </div>
-          ) : (
-            <button onClick={() => setEditing(true)}>Edit Profile</button>
-          )}
-        </div>
-      )}
-      <h4>Connections</h4>
-      <ul>
-        {otherNodes.map(other => {
-          const isConnected = edges.some(
-            e => (e.from === node.id && e.to === other.id) || (e.from === other.id && e.to === node.id)
-          );
-          return (
-            <li key={other.id}>
-              {other.label}{' '}
-              {isConnected ? (
-                <button onClick={() => removeEdge(node.id, other.id)}>Remove Friend</button>
+              {editing ? (
+                <div>
+                  <h4>Edit Profile</h4>
+                  <input
+                    type="text"
+                    value={editLabel}
+                    onChange={e => setEditLabel(e.target.value)}
+                  />
+                  <input
+                    type="text"
+                    value={editPhone}
+                    placeholder="Phone"
+                    onChange={e => setEditPhone(e.target.value)}
+                  />
+                  <input
+                    type="text"
+                    value={editAddress}
+                    placeholder="Address"
+                    onChange={e => setEditAddress(e.target.value)}
+                  />
+                  <button
+                    onClick={() => {
+                      updateNode(node.id, { label: editLabel, phone: editPhone, address: editAddress });
+                      setEditing(false);
+                    }}
+                  >
+                    Save
+                  </button>
+                  <button onClick={() => setEditing(false)}>Cancel</button>
+                </div>
               ) : (
-                <button onClick={() => addEdge(node.id, other.id)}>Add Friend</button>
+                <button onClick={() => setEditing(true)}>Edit Profile</button>
               )}
-            </li>
-          );
-        })}
-      </ul>
-      <h4>Find Mutual Friends</h4>
-      <div>
-        {(() => {
-          const friendIds = edges
-            .filter(e => e.from === node.id || e.to === node.id)
-            .map(e => (e.from === node.id ? e.to : e.from));
-          const friends = nodes.filter(n => friendIds.includes(n.id));
-          if (friends.length === 0) {
-            return <p>No friends to select</p>;
-          }
-          return (
-            <>
-              <select value={selectedFriend} onChange={e => setSelectedFriend(e.target.value)}>
-                <option value="" disabled>Select friend</option>
-                {friends.map(f => (
-                  <option key={f.id} value={f.id}>{f.label}</option>
-                ))}
-              </select>
-              <button onClick={findMutual} disabled={!selectedFriend}>Show Mutual</button>
-            </>
-          );
-        })()}
-      </div>
-      {mutualList.length > 0 && (
-        <ul>
-          {mutualList.map(m => (
-            <li key={m.id}>{m.label} ({m.id})</li>
-          ))}
-        </ul>
+            </div>
+          )}
+          <h4>Connections</h4>
+          <ul>
+            {otherNodes.map(other => {
+              const isConnected = edges.some(
+                e => (e.from === node.id && e.to === other.id) || (e.from === other.id && e.to === node.id)
+              );
+              return (
+                <li key={other.id}>
+                  {other.label}{' '}
+                  {isConnected ? (
+                    <button onClick={() => removeEdge(node.id, other.id)}>Remove Friend</button>
+                  ) : (
+                    <button onClick={() => addEdge(node.id, other.id)}>Add Friend</button>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+          <h4>Find Mutual Friends</h4>
+          <div>
+            {(() => {
+              const friendIds = edges
+                .filter(e => e.from === node.id || e.to === node.id)
+                .map(e => (e.from === node.id ? e.to : e.from));
+              const friends = nodes.filter(n => friendIds.includes(n.id));
+              if (friends.length === 0) {
+                return <p>No friends to select</p>;
+              }
+              return (
+                <>
+                  <select value={selectedFriend} onChange={e => setSelectedFriend(e.target.value)}>
+                    <option value="" disabled>Select friend</option>
+                    {friends.map(f => (
+                      <option key={f.id} value={f.id}>{f.label}</option>
+                    ))}
+                  </select>
+                  <button onClick={findMutual} disabled={!selectedFriend}>Show Mutual</button>
+                </>
+              );
+            })()}
+          </div>
+          {mutualList.length > 0 && (
+            <ul>
+              {mutualList.map(m => (
+                <li key={m.id}>{m.label} ({m.id})</li>
+              ))}
+            </ul>
+          )}
+        </>
       )}
     </Card>
   );
