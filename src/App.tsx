@@ -1,17 +1,32 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import GraphCanvas from './components/GraphCanvas';
-import NodeCard from './components/NodeCard';
-import Login from './components/Login';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import Layout from './Layout';
+import LoginPage from './pages/LoginPage.tsx';
+import HomePage from './pages/HomePage.tsx';
+import ExplorerPage from './pages/ExplorerPage.tsx';
+import SettingsPage from './pages/SettingsPage.tsx';
+import AdminPage from './pages/AdminPage.tsx';
 import { useGraphData, NodeData } from './hooks/useGraphData';
 import { usePostData } from './hooks/usePostData';
 
+// Define user type
+interface AppUser {
+  id: string;
+  email: string;
+  password: string;
+  label: string;
+  showConnections: boolean;
+  profileVisibility: 'public' | 'friends' | 'private';
+  isAdmin: boolean;
+}
+
 // Initial mock users (admin & regular)
-const initialUsers = [
-  { id: '0', email: 'admin@example.com', password: 'adminpwd', label: 'Admin', showConnections: true, isAdmin: true },
-  { id: '1', email: 'alice@example.com', password: 'alicepwd', label: 'Alice', showConnections: true, isAdmin: false },
-  { id: '2', email: 'bob@example.com', password: 'bobpwd', label: 'Bob', showConnections: true, isAdmin: false },
-  { id: '3', email: 'carol@example.com', password: 'carolpwd', label: 'Carol', showConnections: true, isAdmin: false }
+const initialUsers: AppUser[] = [
+  { id: '0', email: 'admin@example.com', password: 'adminpwd', label: 'Admin', showConnections: true, profileVisibility: 'public', isAdmin: true },
+  { id: '1', email: 'alice@example.com', password: 'alicepwd', label: 'Alice', showConnections: true, profileVisibility: 'public', isAdmin: false },
+  { id: '2', email: 'bob@example.com', password: 'bobpwd', label: 'Bob', showConnections: true, profileVisibility: 'public', isAdmin: false },
+  { id: '3', email: 'carol@example.com', password: 'carolpwd', label: 'Carol', showConnections: true, profileVisibility: 'public', isAdmin: false }
 ];
 
 const Header = styled.div`
@@ -59,13 +74,14 @@ const SearchPanel = styled.div`
 `;
 
 export default function App() {
-  const [users, setUsers] = useState(initialUsers);
-  const [user, setUser] = useState<{ id: string; email: string; label: string; showConnections: boolean; isAdmin: boolean } | null>(null);
+  const [users, setUsers] = useState<AppUser[]>(initialUsers);
+  const [user, setUser] = useState<AppUser | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [showSettings, setShowSettings] = useState(false);
   const [selected, setSelected] = useState<NodeData | null>(null);
-  const { nodes, edges, friendRequests, sendFriendRequest, approveFriendRequest, declineFriendRequest, addNode, addEdge, removeEdge, updateNode } = useGraphData(user?.isAdmin ? undefined : user?.id);
-  const { posts, addPost } = usePostData();
+  const graph = useGraphData(user?.isAdmin ? undefined : user?.id);
+  const { addNode } = graph;
+  const postData = usePostData();
 
   // Authentication handlers
   const loginHandler = (email: string, password: string): boolean => {
@@ -84,108 +100,26 @@ export default function App() {
     address?: string
   ) => {
     const id = Date.now().toString();
-    const newUser = { id, email, password, label, showConnections: true, isAdmin: false };
+    const newUser: AppUser = { id, email, password, label, showConnections: true, profileVisibility: 'public', isAdmin: false };
     setUsers(prev => [...prev, newUser]);
     // Create node in graph for this user
     addNode({ label, phone, address });
-    setUser(newUser);
+    setUser({ ...newUser });
   };
-  // If not authenticated, show login/signup screen
-  if (!user) {
-    return <Login onLogin={loginHandler} onSignup={signupHandler} />;
-  }
-
-  // Admin search results (search by name, id, or email)
-  const searchResults = user.isAdmin && searchTerm
-    ? users.filter(u =>
-        u.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        u.id.includes(searchTerm) ||
-        u.email.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    : [];
 
   return (
-    <Container>
-      <Header>
-        <span>Welcome, {user.label}</span>
-        <button onClick={() => setUser(null)}>Logout</button>
-        <button onClick={() => setShowSettings(prev => !prev)}>Settings</button>
-      </Header>
-      {user.isAdmin && (
-        <SearchPanel>
-          <input
-            type="text"
-            placeholder="Search users"
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-          />
-          {searchTerm && (
-            <ul>
-              {searchResults.map(u => {
-                const node = nodes.find(n => n.id === u.id);
-                if (!node) return null;
-                return (
-                  <li key={u.id}>
-                    <button
-                      onClick={() => {
-                        setSelected(node);
-                        setSearchTerm('');
-                      }}
-                    >
-                      {u.label} ({u.email})
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </SearchPanel>
-      )}
-      {showSettings && user && (
-        <SettingsPanel>
-          <label>
-            <input
-              type="checkbox"
-              checked={user.showConnections}
-              onChange={() => {
-                if (!user) return;
-                const newShow = !user.showConnections;
-                setUser({ ...user, showConnections: newShow, isAdmin: user.isAdmin });
-                setUsers(prev =>
-                  prev.map(u =>
-                    u.id === user.id ? { ...u, showConnections: newShow, isAdmin: u.isAdmin } : u
-                  )
-                );
-              }}
-            />{' '}
-            Allow others to see my connections
-          </label>
-        </SettingsPanel>
-      )}
-      <GraphCanvas
-        nodes={nodes}
-        edges={user?.showConnections ? edges : []}
-        onNodeClick={setSelected}
-      />
-      {selected && (
-        <NodeCard
-          node={selected}
-          nodes={nodes}
-          edges={edges}
-          friendRequests={friendRequests}
-          sendRequest={sendFriendRequest}
-          approveRequest={approveFriendRequest}
-          declineRequest={declineFriendRequest}
-          addEdge={addEdge}
-          removeEdge={removeEdge}
-          updateNode={updateNode}
-          userId={user.id}
-          isAdmin={user.isAdmin}
-          posts={posts}
-          onAddPost={addPost}
-          onClose={() => setSelected(null)}
-        />
-      )}
-    </Container>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={<LoginPage onLogin={loginHandler} onSignup={signupHandler} />} />
+        <Route path="/" element={user ? <Layout user={user} onLogout={() => setUser(null)} /> : <Navigate to="/login" /> }>
+          <Route index element={<Navigate to="home" />} />
+          <Route path="home" element={<HomePage user={user} users={users} postData={postData} />} />
+          <Route path="explorer" element={<ExplorerPage user={user} users={users} graph={graph} postData={postData} />} />
+          <Route path="settings" element={<SettingsPage user={user} users={users} setUsers={setUsers} />} />
+          {user?.isAdmin && <Route path="admin" element={<AdminPage user={user} graph={graph} users={users} postData={postData} />} />}
+        </Route>
+        <Route path="*" element={<Navigate to={user ? "/explorer" : "/login"} />} />
+      </Routes>
+    </BrowserRouter>
   );
 } 

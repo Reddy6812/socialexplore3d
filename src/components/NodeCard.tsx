@@ -165,7 +165,7 @@ const NodeCard: FC<Props> = ({ node, onClose, nodes, edges, addEdge, removeEdge,
             </div>
           )}
           <h4>Posts</h4>
-          <ul>
+          <ul style={{ maxHeight: '150px', overflowY: 'auto', padding: 0, margin: 0, listStyle: 'none' }}>
             {posts.filter(p => {
               if (p.authorId !== node.id) return false;
               // owner or admin always sees
