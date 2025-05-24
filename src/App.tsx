@@ -7,9 +7,9 @@ import { useGraphData, NodeData } from './hooks/useGraphData';
 
 // Initial mock users
 const initialUsers = [
-  { id: '1', email: 'alice@example.com', password: 'alicepwd', label: 'Alice' },
-  { id: '2', email: 'bob@example.com', password: 'bobpwd', label: 'Bob' },
-  { id: '3', email: 'carol@example.com', password: 'carolpwd', label: 'Carol' }
+  { id: '1', email: 'alice@example.com', password: 'alicepwd', label: 'Alice', showConnections: true },
+  { id: '2', email: 'bob@example.com', password: 'bobpwd', label: 'Bob', showConnections: true },
+  { id: '3', email: 'carol@example.com', password: 'carolpwd', label: 'Carol', showConnections: true }
 ];
 
 const Header = styled.div`
@@ -31,9 +31,21 @@ const Container = styled.div`
   position: relative;
 `;
 
+const SettingsPanel = styled.div`
+  position: absolute;
+  top: 50px;
+  left: 10px;
+  background: white;
+  padding: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border-radius: 4px;
+  z-index: 10;
+`;
+
 export default function App() {
   const [users, setUsers] = useState(initialUsers);
-  const [user, setUser] = useState<{ id: string; email: string; label: string } | null>(null);
+  const [user, setUser] = useState<{ id: string; email: string; label: string; showConnections: boolean } | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
   const [selected, setSelected] = useState<NodeData | null>(null);
   const { nodes, edges, addNode, addEdge, removeEdge, updateNode } = useGraphData(user?.id);
 
@@ -54,7 +66,7 @@ export default function App() {
     address?: string
   ) => {
     const id = Date.now().toString();
-    const newUser = { id, email, password, label };
+    const newUser = { id, email, password, label, showConnections: true };
     setUsers(prev => [...prev, newUser]);
     // Create node in graph for this user
     addNode({ label, phone, address });
@@ -70,8 +82,34 @@ export default function App() {
       <Header>
         <span>Welcome, {user.label}</span>
         <button onClick={() => setUser(null)}>Logout</button>
+        <button onClick={() => setShowSettings(prev => !prev)}>Settings</button>
       </Header>
-      <GraphCanvas nodes={nodes} edges={edges} onNodeClick={setSelected} />
+      {showSettings && user && (
+        <SettingsPanel>
+          <label>
+            <input
+              type="checkbox"
+              checked={user.showConnections}
+              onChange={() => {
+                if (!user) return;
+                const newShow = !user.showConnections;
+                setUser({ ...user, showConnections: newShow });
+                setUsers(prev =>
+                  prev.map(u =>
+                    u.id === user.id ? { ...u, showConnections: newShow } : u
+                  )
+                );
+              }}
+            />{' '}
+            Allow others to see my connections
+          </label>
+        </SettingsPanel>
+      )}
+      <GraphCanvas
+        nodes={nodes}
+        edges={user?.showConnections ? edges : []}
+        onNodeClick={setSelected}
+      />
       {selected && (
         <NodeCard
           node={selected}
