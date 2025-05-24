@@ -71,6 +71,35 @@ const NodeCard: FC<Props> = ({ node, onClose, nodes, edges, addEdge, removeEdge,
       <p>ID: {node.id}</p>
       <p>Phone: {node.phone}</p>
       <p>Address: {node.address}</p>
+      {node.id !== userId && (
+        <div>
+          <h4>Friendship</h4>
+          {edges.some(e => (e.from === node.id && e.to === userId) || (e.from === userId && e.to === node.id)) ? (
+            <p>Friends</p>
+          ) : friendRequests.some(r => r.from === userId && r.to === node.id) ? (
+            <p>Request Sent</p>
+          ) : (
+            <button onClick={() => sendRequest(userId, node.id)}>Send Friend Request</button>
+          )}
+        </div>
+      )}
+      {node.id === userId && (
+        <div>
+          <h4>Incoming Friend Requests</h4>
+          <ul>
+            {friendRequests.filter(r => r.to === node.id).map(r => {
+              const fromNode = nodes.find(n => n.id === r.from);
+              return (
+                <li key={r.id}>
+                  {fromNode?.label} ({r.from}){' '}
+                  <button onClick={() => approveRequest(r.id)}>Approve</button>{' '}
+                  <button onClick={() => declineRequest(r.id)}>Decline</button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
       {(node.id === userId || isAdmin) && (
         <>
           {node.id === userId && (
