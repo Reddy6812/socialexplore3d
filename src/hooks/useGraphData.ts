@@ -3,8 +3,8 @@ import { useState } from 'react';
 export interface NodeData {
   id: string;
   label: string;
-  phone: string;
-  address: string;
+  phone?: string;
+  address?: string;
   position: [number, number, number];
 }
 
@@ -28,13 +28,14 @@ export function useGraphData() {
   const [nodes, setNodes] = useState<NodeData[]>(initialNodes);
   const [edges, setEdges] = useState<EdgeData[]>(initialEdges);
 
-  const addNode = (node: Omit<NodeData, 'position'>) => {
+  const addNode = (node: Omit<NodeData, 'id' | 'position'>) => {
+    const id = Date.now().toString();
     const position: [number, number, number] = [
       (Math.random() - 0.5) * 4,
       (Math.random() - 0.5) * 4,
       0
     ];
-    setNodes(prev => [...prev, { ...node, position }]);
+    setNodes(prev => [...prev, { id, ...node, position }]);
   };
 
   const addEdge = (from: string, to: string) => {
