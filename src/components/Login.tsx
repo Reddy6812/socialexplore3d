@@ -1,5 +1,6 @@
 import React, { FC, useState } from 'react';
 import styled from 'styled-components';
+import { useNavigate } from 'react-router-dom';
 
 const LoginContainer = styled.div`
   width: 100vw;
@@ -39,23 +40,98 @@ const Button = styled.button`
 `;
 
 interface LoginProps {
-  onLogin: (email: string, password: string) => void;
+  onLogin: (email: string, password: string) => boolean;
+  onSignup: (email: string, password: string, label: string, phone?: string, address?: string) => void;
 }
 
-const Login: FC<LoginProps> = ({ onLogin }) => {
+const Login: FC<LoginProps> = ({ onLogin, onSignup }) => {
+  const navigate = useNavigate();
+  const [showSignup, setShowSignup] = useState(false);
+  const [loginError, setLoginError] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [signupEmail, setSignupEmail] = useState('');
+  const [signupPassword, setSignupPassword] = useState('');
+  const [signupLabel, setSignupLabel] = useState('');
+  const [signupPhone, setSignupPhone] = useState('');
+  const [signupAddress, setSignupAddress] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !password) return;
-    onLogin(email.trim(), password);
+    setLoginError('');
+    const success = onLogin(email.trim(), password);
+    if (!success) {
+      setLoginError('Account not found. Please create one.');
+    } else {
+      navigate('/');
+    }
   };
 
+  const handleSignupSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!signupEmail.trim() || !signupPassword || !signupLabel.trim()) return;
+    onSignup(
+      signupEmail.trim(),
+      signupPassword,
+      signupLabel.trim(),
+      signupPhone.trim() || undefined,
+      signupAddress.trim() || undefined
+    );
+    navigate('/');
+  };
+
+  if (showSignup) {
+    return (
+      <LoginContainer>
+        <Form onSubmit={handleSignupSubmit}>
+          <h2>Sign Up</h2>
+          <Input
+            type="email"
+            placeholder="Email"
+            value={signupEmail}
+            onChange={e => setSignupEmail(e.target.value)}
+          />
+          <Input
+            type="password"
+            placeholder="Password"
+            value={signupPassword}
+            onChange={e => setSignupPassword(e.target.value)}
+          />
+          <Input
+            type="text"
+            placeholder="Name"
+            value={signupLabel}
+            onChange={e => setSignupLabel(e.target.value)}
+          />
+          <Input
+            type="text"
+            placeholder="Phone (optional)"
+            value={signupPhone}
+            onChange={e => setSignupPhone(e.target.value)}
+          />
+          <Input
+            type="text"
+            placeholder="Address (optional)"
+            value={signupAddress}
+            onChange={e => setSignupAddress(e.target.value)}
+          />
+          <Button type="submit">Create Account</Button>
+          <p>
+            Already have an account?{' '}
+            <button type="button" onClick={() => setShowSignup(false)}>
+              Login
+            </button>
+          </p>
+        </Form>
+      </LoginContainer>
+    );
+  }
   return (
     <LoginContainer>
-      <Form onSubmit={handleSubmit}>
+      <Form onSubmit={handleLoginSubmit}>
         <h2>Login</h2>
+        {loginError && <p style={{ color: 'red' }}>{loginError}</p>}
         <Input
           type="email"
           placeholder="Email"
@@ -69,6 +145,12 @@ const Login: FC<LoginProps> = ({ onLogin }) => {
           onChange={e => setPassword(e.target.value)}
         />
         <Button type="submit">Login</Button>
+        <p>
+          Don't have an account?{' '}
+          <button type="button" onClick={() => setShowSignup(true)}>
+            Sign up
+          </button>
+        </p>
       </Form>
     </LoginContainer>
   );
