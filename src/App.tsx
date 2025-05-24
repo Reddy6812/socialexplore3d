@@ -95,11 +95,12 @@ export default function App() {
     return <Login onLogin={loginHandler} onSignup={signupHandler} />;
   }
 
-  // Admin search results
+  // Admin search results (search by name, id, or email)
   const searchResults = user.isAdmin && searchTerm
-    ? nodes.filter(n =>
-        n.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        n.id.includes(searchTerm)
+    ? users.filter(u =>
+        u.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        u.id.includes(searchTerm) ||
+        u.email.toLowerCase().includes(searchTerm.toLowerCase())
       )
     : [];
 
@@ -120,18 +121,22 @@ export default function App() {
           />
           {searchTerm && (
             <ul>
-              {searchResults.map(n => (
-                <li key={n.id}>
-                  <button
-                    onClick={() => {
-                      setSelected(n);
-                      setSearchTerm('');
-                    }}
-                  >
-                    {n.label} ({n.id})
-                  </button>
-                </li>
-              ))}
+              {searchResults.map(u => {
+                const node = nodes.find(n => n.id === u.id);
+                if (!node) return null;
+                return (
+                  <li key={u.id}>
+                    <button
+                      onClick={() => {
+                        setSelected(node);
+                        setSearchTerm('');
+                      }}
+                    >
+                      {u.label} ({u.email})
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </SearchPanel>
