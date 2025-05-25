@@ -19,13 +19,19 @@ export function useChatData(currentUserId: string) {
   const { socket } = useCollaboration(currentUserId);
   const storageKey = 'socialexplore3d_chats';
   const [chats, setChats] = useState<Chat[]>(() => {
-    try {
-      const stored = localStorage.getItem(storageKey);
-      return stored ? (JSON.parse(stored) as Chat[]) : [];
-    } catch {
+    const stored = localStorage.getItem(storageKey);
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          return parsed as Chat[];
+        }
+      } catch {
+        // ignore parse errors
+      }
       localStorage.removeItem(storageKey);
-      return [];
     }
+    return [];
   });
 
   // Subscribe to real-time incoming messages

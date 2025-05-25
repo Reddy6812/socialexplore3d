@@ -93,11 +93,17 @@ export function useGraphData(userId?: string) {
   const edgesKey = userId ? `socialexplore3d_edges_${userId}` : null;
   const [edges, setEdges] = useState<EdgeData[]>(() => {
     if (edgesKey) {
-      try {
-        const stored = localStorage.getItem(edgesKey);
-        if (stored) return JSON.parse(stored);
-      } catch (e) {
-        console.error('Failed to parse stored edges', e);
+      const stored = localStorage.getItem(edgesKey);
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) {
+            return parsed as EdgeData[];
+          }
+        } catch (e) {
+          console.error('Failed to parse stored edges', e);
+        }
+        localStorage.removeItem(edgesKey);
       }
     }
     return initEdges;

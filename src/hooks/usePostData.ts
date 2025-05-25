@@ -20,28 +20,29 @@ export interface Post {
 
 export function usePostData() {
   const [posts, setPosts] = useState<Post[]>(() => {
-    try {
-      const stored = localStorage.getItem('socialexplore3d_posts');
-      if (stored) {
-        const arr = JSON.parse(stored);
-        return arr.map((p: any) => ({
-          id: p.id,
-          authorId: p.authorId,
-          imageUrl: p.imageUrl,
-          visibility: p.visibility,
-          caption: p.caption || '',
-          tags: p.tags || [],
-          likes: p.likes || [],
-          comments: p.comments || [],
-          reactions: p.reactions || {}
-        }));
+    const stored = localStorage.getItem('socialexplore3d_posts');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          return parsed.map((p: any) => ({
+            id: p.id,
+            authorId: p.authorId,
+            imageUrl: p.imageUrl,
+            visibility: p.visibility,
+            caption: p.caption || '',
+            tags: p.tags || [],
+            likes: p.likes || [],
+            comments: p.comments || [],
+            reactions: p.reactions || {}
+          }));
+        }
+      } catch (e) {
+        console.error('Failed to parse stored posts', e);
       }
-      return [];
-    } catch (e) {
-      console.error('Failed to parse stored posts', e);
       localStorage.removeItem('socialexplore3d_posts');
-      return [];
     }
+    return [];
   });
 
   useEffect(() => {

@@ -10,13 +10,19 @@ export interface VoiceNote {
 export function useVoiceNoteData() {
   const key = 'socialexplore3d_voiceNotes';
   const [voiceNotes, setVoiceNotes] = useState<VoiceNote[]>(() => {
-    try {
-      const stored = localStorage.getItem(key);
-      return stored ? JSON.parse(stored) : [];
-    } catch {
+    const stored = localStorage.getItem(key);
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          return parsed as VoiceNote[];
+        }
+      } catch {
+        // ignore parse errors
+      }
       localStorage.removeItem(key);
-      return [];
     }
+    return [];
   });
 
   useEffect(() => {
