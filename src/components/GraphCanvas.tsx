@@ -53,7 +53,12 @@ export default function GraphCanvas({ nodes, edges, onNodeClick }: Props) {
     <Canvas camera={{ position: [0, 0, 5] }}>
       <ambientLight intensity={0.5} />
       <pointLight position={[10, 10, 10]} />
-      {edges.map((e, i) => <EdgeLine key={i} edge={e} nodeMap={nodeMap} />)}
+      {edges.map((e, i) => {
+        const fromNode = nodeMap[e.from];
+        const toNode = nodeMap[e.to];
+        if (!fromNode || !toNode) return null;
+        return <EdgeLine key={i} edge={e} nodeMap={nodeMap} />;
+      })}
       {nodes.map(n => (
         <NodeSphere key={n.id} node={n} onClick={() => onNodeClick(n)} />
       ))}
