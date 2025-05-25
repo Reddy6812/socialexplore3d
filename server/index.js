@@ -40,6 +40,11 @@ io.on('connection', socket => {
     socket.broadcast.to(msg.chatId).emit('chatMessage', msg);
   });
 
+  // relay message deletion events to chat-specific room
+  socket.on('deleteMessage', ({ chatId, messageId }) => {
+    socket.broadcast.to(chatId).emit('deleteMessage', { chatId, messageId });
+  });
+
   // relay friend requests
   socket.on('friendRequest', (req) => {
     // broadcast to others in the room

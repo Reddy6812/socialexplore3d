@@ -1,9 +1,13 @@
-import React, { FC, useState, useRef } from 'react';
+import React, { FC, useState, useRef, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import styled from 'styled-components';
 import { useChatData, Chat } from '../hooks/useChatData';
+import { useVideoCall } from '../hooks/useVideoCall';
 import IconButton from '@mui/material/IconButton';
 import VideocamIcon from '@mui/icons-material/Videocam';
+import DeleteIcon from '@mui/icons-material/Delete';
+import MicIcon from '@mui/icons-material/Mic';
+import MicOffIcon from '@mui/icons-material/MicOff';
 
 interface ChatPageProps {
   user: any;
@@ -24,7 +28,8 @@ const MessagesContainer = styled.div`
 
 const ChatPage: FC<ChatPageProps> = ({ user, users }) => {
   const { chatId } = useParams<{ chatId: string }>();
-  const { chats, sendMessage } = useChatData(user.id);
+  const { chats, sendMessage, deleteMessage } = useChatData(user.id);
+  const { startCall, endCall, localStream, remoteStream } = useVideoCall(user.id, chatId!);
   const chat = chats.find((c: Chat) => c.id === chatId);
 
   if (!chat) {
@@ -36,10 +41,46 @@ const ChatPage: FC<ChatPageProps> = ({ user, users }) => {
   const [input, setInput] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const [inCall, setInCall] = useState(false);
+  const localVideoRef = useRef<HTMLVideoElement>(null);
+  const remoteVideoRef = useRef<HTMLVideoElement>(null);
+  const [muted, setMuted] = useState(false);
+
+  useEffect(() => {
+    if (localVideoRef.current && localStream) {
+      localVideoRef.current.srcObject = localStream;
+    }
+  }, [localStream]);
+
+  useEffect(() => {
+    if (remoteVideoRef.current && remoteStream) {
+      remoteVideoRef.current.srcObject = remoteStream;
+    }
+  }, [remoteStream]);
 
   return (
     <Container>
       <h2>Chat with {other?.label || otherId}</h2>
+      {inCall && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.8)', zIndex: 2000 }}>
+          <video ref={remoteVideoRef} autoPlay playsInline style={{ width: '60%', height: 'auto', margin: 'auto', display: 'block' }} />
+          <video ref={localVideoRef} autoPlay muted playsInline style={{ width: '20%', height: 'auto', position: 'absolute', bottom: '10px', right: '10px', border: '2px solid white' }} />
+          <div style={{ position: 'absolute', top: '10px', right: '10px', display: 'flex', gap: '8px' }}>
+            <IconButton onClick={() => {
+              if (localStream) {
+                localStream.getAudioTracks().forEach(track => track.enabled = muted);
+                setMuted(prev => !prev);
+              }
+            }} color="inherit">
+              {muted ? <MicOffIcon /> : <MicIcon />}
+            </IconButton>
+            <button
+              onClick={() => { endCall(); setInCall(false); }}
+              style={{ background: 'red', color: 'white', border: 'none', borderRadius: '50%', width: '40px', height: '40px', cursor: 'pointer' }}
+            />
+          </div>
+        </div>
+      )}
       <MessagesContainer>
         {chat.messages.map(msg => {
           const sender = users.find(u => u.id === msg.senderId);
@@ -47,7 +88,12 @@ const ChatPage: FC<ChatPageProps> = ({ user, users }) => {
             <div key={msg.id} style={{ textAlign: msg.senderId === user.id ? 'right' : 'left', marginBottom: '8px' }}>
               <strong>{sender?.label || msg.senderId}:</strong>{' '}
               {msg.audioUrl ? (
-                <audio controls src={msg.audioUrl} />
+                <>
+                  <audio controls src={msg.audioUrl} />
+                  <IconButton size="small" onClick={() => deleteMessage(chat.id, msg.id)} title="Delete">
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </>
               ) : (
                 <span>{msg.text}</span>
               )}
@@ -87,7 +133,9 @@ const ChatPage: FC<ChatPageProps> = ({ user, users }) => {
         </button>
         {/* Video call button */}
         <IconButton
-          onClick={() => { console.log('Initiate video call to chat', chat?.id); }}
+          onClick={() => {
+            if (!inCall) { startCall(); setInCall(true); } else { endCall(); setInCall(false); }
+          }}
           size="small"
           title="Video Call"
         >

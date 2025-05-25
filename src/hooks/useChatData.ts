@@ -55,7 +55,19 @@ export function useChatData(currentUserId: string) {
       });
     };
     socket.on('chatMessage', handler);
-    return () => { socket.off('chatMessage', handler); };
+    // Handle incoming delete events
+    const delHandler = (data: { chatId: string; messageId: string }) => {
+      setChats(prev => prev.map(c =>
+        c.id === data.chatId
+          ? { ...c, messages: c.messages.filter(m => m.id !== data.messageId) }
+          : c
+      ));
+    };
+    socket.on('deleteMessage', delHandler);
+    return () => {
+      socket.off('chatMessage', handler);
+      socket.off('deleteMessage', delHandler);
+    };
   }, [socket]);
 
   // Join chat-specific rooms so private messages are scoped correctly
@@ -65,6 +77,16 @@ export function useChatData(currentUserId: string) {
       socket.emit('joinChat', c.id);
     });
   }, [socket, chats]);
+
+  /** Delete a message in a chat */
+  const deleteMessage = (chatId: string, messageId: string) => {
+    setChats(prev => prev.map(c =>
+      c.id === chatId
+        ? { ...c, messages: c.messages.filter(m => m.id !== messageId) }
+        : c
+    ));
+    socket?.emit('deleteMessage', { chatId, messageId });
+  };
 
   useEffect(() => {
     try {
@@ -102,5 +124,5 @@ export function useChatData(currentUserId: string) {
     socket?.emit('chatMessage', { chatId, ...newMessage });
   };
 
-  return { chats: userChats, startChat, sendMessage };
+  return { chats: userChats, startChat, sendMessage, deleteMessage };
 } 
