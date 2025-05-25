@@ -18,6 +18,7 @@ export default function Layout({ user, onLogout }: { user: any; onLogout: () => 
   const menuItems = [
     { text: 'Home', path: '/home' },
     { text: 'Explorer', path: '/explorer' },
+    { text: 'Friends', path: '/friends' },
     { text: 'Settings', path: '/settings' },
   ];
   if (user.isAdmin) {
