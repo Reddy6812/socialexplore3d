@@ -55,6 +55,16 @@ io.on('connection', socket => {
   socket.on('friendRemove', (upd) => {
     socket.broadcast.to('global').emit('friendRemove', upd);
   });
+
+  // broadcast video call start to other participants
+  socket.on('start-call', ({ chatId, from }) => {
+    socket.broadcast.to(chatId).emit('start-call', { chatId, from });
+  });
+
+  // broadcast video call end to other participants
+  socket.on('end-call', ({ chatId }) => {
+    socket.broadcast.to(chatId).emit('end-call', { chatId });
+  });
 });
 
 // Fallback: serve index.html for any other routes

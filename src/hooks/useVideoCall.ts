@@ -46,6 +46,7 @@ export function useVideoCall(currentUserId: string, chatId: string) {
       setLocalStream(null);
     }
     setRemoteStream(null);
+    socket?.emit('end-call', { chatId });
   };
 
   return { startCall, endCall, localStream, remoteStream };

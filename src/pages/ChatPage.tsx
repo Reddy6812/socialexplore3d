@@ -2,6 +2,7 @@ import React, { FC, useState, useRef, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import styled from 'styled-components';
 import { useChatData, Chat } from '../hooks/useChatData';
+import { useCollaboration } from '../hooks/useCollaboration';
 import { useVideoCall } from '../hooks/useVideoCall';
 import IconButton from '@mui/material/IconButton';
 import VideocamIcon from '@mui/icons-material/Videocam';
@@ -29,8 +30,24 @@ const MessagesContainer = styled.div`
 const ChatPage: FC<ChatPageProps> = ({ user, users }) => {
   const { chatId } = useParams<{ chatId: string }>();
   const { chats, sendMessage, deleteMessage } = useChatData(user.id);
+  const { socket } = useCollaboration(user.id);
   const { startCall, endCall, localStream, remoteStream } = useVideoCall(user.id, chatId!);
   const chat = chats.find((c: Chat) => c.id === chatId);
+  const [inCall, setInCall] = useState(false);
+  const [incomingCall, setIncomingCall] = useState(false);
+
+  useEffect(() => {
+    if (!socket) return;
+    const onStart = (data: { chatId: string; from: string }) => {
+      if (data.chatId === chatId) setIncomingCall(true);
+    };
+    const onEnd = (data: { chatId: string }) => {
+      if (data.chatId === chatId) { endCall(); setInCall(false); setIncomingCall(false); }
+    };
+    socket.on('start-call', onStart);
+    socket.on('end-call', onEnd);
+    return () => { socket.off('start-call', onStart); socket.off('end-call', onEnd); };
+  }, [socket, chatId, endCall]);
 
   if (!chat) {
     return <Container>Chat not found.</Container>;
@@ -41,7 +58,6 @@ const ChatPage: FC<ChatPageProps> = ({ user, users }) => {
   const [input, setInput] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const [inCall, setInCall] = useState(false);
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const [muted, setMuted] = useState(false);
@@ -61,10 +77,17 @@ const ChatPage: FC<ChatPageProps> = ({ user, users }) => {
   return (
     <Container>
       <h2>Chat with {other?.label || otherId}</h2>
+      {incomingCall && !inCall && (
+        <div style={{ position: 'fixed', top:0, left:0, width:'100vw', height:'100vh', background:'rgba(0,0,0,0.8)', color:'white', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', zIndex:2000 }}>
+          <p>Incoming call from {other?.label || otherId}</p>
+          <button onClick={() => { startCall(); setInCall(true); setIncomingCall(false); }}>Answer</button>
+          <button onClick={() => { socket?.emit('end-call', { chatId }); setIncomingCall(false); }}>Decline</button>
+        </div>
+      )}
       {inCall && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.8)', zIndex: 2000 }}>
-          <video ref={remoteVideoRef} autoPlay playsInline style={{ width: '60%', height: 'auto', margin: 'auto', display: 'block' }} />
-          <video ref={localVideoRef} autoPlay muted playsInline style={{ width: '20%', height: 'auto', position: 'absolute', bottom: '10px', right: '10px', border: '2px solid white' }} />
+          <video ref={remoteVideoRef} controls autoPlay playsInline style={{ width: '60%', height: 'auto', margin: 'auto', display: 'block' }} />
+          <video ref={localVideoRef} controls autoPlay muted playsInline style={{ width: '20%', height: 'auto', position: 'absolute', bottom: '10px', right: '10px', border: '2px solid white' }} />
           <div style={{ position: 'absolute', top: '10px', right: '10px', display: 'flex', gap: '8px' }}>
             <IconButton onClick={() => {
               if (localStream) {
@@ -134,7 +157,7 @@ const ChatPage: FC<ChatPageProps> = ({ user, users }) => {
         {/* Video call button */}
         <IconButton
           onClick={() => {
-            if (!inCall) { startCall(); setInCall(true); } else { endCall(); setInCall(false); }
+            if (!inCall) { socket?.emit('start-call', { chatId, from: user.id }); startCall(); setInCall(true); } else { endCall(); setInCall(false); }
           }}
           size="small"
           title="Video Call"
