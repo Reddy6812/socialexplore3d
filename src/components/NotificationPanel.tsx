@@ -20,29 +20,47 @@ const NotificationPanel: FC<NotificationPanelProps> = ({ user }) => {
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const openMenu = Boolean(anchorEl);
-  const handleClick = (event: React.MouseEvent<HTMLElement>) => { setAnchorEl(event.currentTarget); };
+  // track viewed notification counts
+  const [viewedFriendReq, setViewedFriendReq] = useState(0);
+  const initialMaxPost = useRef(Math.max(0, ...postData.posts.map(p => Number(p.id))));
+  const [newPostCount, setNewPostCount] = useState(0);
+  const [viewedMsgCount, setViewedMsgCount] = useState(0);
+  // recompute new posts count when posts change
+  useEffect(() => {
+    const count = postData.posts.filter(p => p.authorId !== user.id && Number(p.id) > initialMaxPost.current).length;
+    setNewPostCount(count);
+  }, [postData.posts, user.id]);
+  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
+    // clear notifications on view
+    setViewedFriendReq(graph.friendRequests.filter(r => r.to === user.id).length);
+    // reset post tracking to current max
+    const maxId = Math.max(0, ...postData.posts.map(p => Number(p.id)));
+    initialMaxPost.current = maxId;
+    setNewPostCount(0);
+    // mark all current messages as viewed
+    const rawMsgCount = chatData.chats.reduce(
+      (sum, chat) => sum + chat.messages.filter(m => m.senderId !== user.id).length,
+      0
+    );
+    setViewedMsgCount(rawMsgCount);
+    setAnchorEl(event.currentTarget);
+  };
   const handleClose = () => { setAnchorEl(null); };
 
   // Friend requests directed to me
   const friendReqCount = graph.friendRequests.filter(r => r.to === user.id).length;
+  // compute friend request notifications minus viewed
+  const friendNotifCount = Math.max(0, friendReqCount - viewedFriendReq);
 
-  // Track initial post IDs to detect new posts by others
-  const initialMaxPost = useRef(Math.max(0, ...postData.posts.map(p => Number(p.id))));
-  const [newPostCount, setNewPostCount] = useState(0);
-  useEffect(() => {
-    const count = postData.posts.filter(p =>
-      p.authorId !== user.id && Number(p.id) > initialMaxPost.current
-    ).length;
-    setNewPostCount(count);
-  }, [postData.posts, user.id]);
-
-  // Total messages from others (naive unread count)
-  const newMsgCount = chatData.chats.reduce(
+  // Total messages from others (naive count)
+  const rawMsgCount = chatData.chats.reduce(
     (sum, chat) => sum + chat.messages.filter(m => m.senderId !== user.id).length,
     0
   );
+  // compute message notifications minus viewed
+  const msgNotifCount = Math.max(0, rawMsgCount - viewedMsgCount);
 
-  const total = friendReqCount + newPostCount + newMsgCount;
+  const total = friendNotifCount + newPostCount + msgNotifCount;
 
   return (
     <>
@@ -53,13 +71,13 @@ const NotificationPanel: FC<NotificationPanelProps> = ({ user }) => {
       </Badge>
       <Menu anchorEl={anchorEl} open={openMenu} onClose={handleClose}>
         <MenuItem onClick={() => { navigate('/friends'); handleClose(); }}>
-          Friend Requests ({friendReqCount})
+          Friend Requests ({friendNotifCount})
         </MenuItem>
         <MenuItem onClick={() => { navigate('/home'); handleClose(); }}>
           New Posts ({newPostCount})
         </MenuItem>
         <MenuItem onClick={() => { navigate('/chats'); handleClose(); }}>
-          Messages ({newMsgCount})
+          Messages ({msgNotifCount})
         </MenuItem>
       </Menu>
     </>

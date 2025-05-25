@@ -73,14 +73,16 @@ export function useChatData(currentUserId: string) {
 
   /** Start a chat with another user or return existing chat id */
   const startChat = (otherId: string): string => {
-    const existing = chats.find(
-      c => c.participants.includes(currentUserId) && c.participants.includes(otherId)
-    );
+    // deterministic chat ID for a peer-to-peer chat (same for both sides)
+    const participants = [currentUserId, otherId].sort();
+    const chatId = participants.join('-');
+    const existing = chats.find(c => c.id === chatId);
     if (existing) return existing.id;
-    const id = Date.now().toString();
-    const newChat: Chat = { id, participants: [currentUserId, otherId], messages: [] };
+    const newChat: Chat = { id: chatId, participants, messages: [] };
     setChats(prev => [...prev, newChat]);
-    return id;
+    // join the new chat room on the socket immediately
+    socket?.emit('joinChat', chatId);
+    return chatId;
   };
 
   /** Send a message in a chat */
