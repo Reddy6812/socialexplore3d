@@ -13,29 +13,21 @@ interface ExplorerPageProps {
 
 const ExplorerPage: FC<ExplorerPageProps> = ({ user, users, graph, postData }) => {
   const [selected, setSelected] = useState<NodeData | null>(null);
-  const [centerTrigger, setCenterTrigger] = useState(false);
-  const [centerOnMeTrigger, setCenterOnMeTrigger] = useState(0);
+  const [autoRotate, setAutoRotate] = useState(false);
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
       <button
         style={{ position: 'absolute', top: 10, left: 10, zIndex: 20 }}
-        onClick={() => setCenterTrigger(prev => !prev)}
+        onClick={() => setAutoRotate(prev => !prev)}
       >
-        Center
-      </button>
-      <button
-        style={{ position: 'absolute', top: 10, left: 80, zIndex: 20 }}
-        onClick={() => setCenterOnMeTrigger(prev => prev + 1)}
-      >
-        Go To Me
+        {autoRotate ? 'Stop Rotation' : 'Start Rotation'}
       </button>
       <GraphCanvas
         nodes={graph.nodes}
         edges={user.showConnections || user.isAdmin ? graph.edges : []}
-        centerTrigger={centerTrigger}
-        centerOnMeTrigger={centerOnMeTrigger}
         currentUserId={user.id}
+        autoRotate={autoRotate}
         onNodeClick={setSelected}
       />
       {selected && (
