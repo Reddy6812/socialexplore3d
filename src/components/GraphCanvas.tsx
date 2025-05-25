@@ -13,16 +13,28 @@ interface Props {
   currentUserId?: string;
 }
 
-const NodeSphere: FC<{ node: NodeData; onClick: () => void }> = ({ node, onClick }) => {
+const NodeSphere: FC<{ node: NodeData; onClick: () => void; onDrag?: (id: string, x: number, y: number) => void; isCurrentUser?: boolean }> = ({ node, onClick, onDrag, isCurrentUser }) => {
   const ref = useRef<any>(null);
+  const dragging = useRef(false);
   useFrame(() => {
     ref.current.rotation.y += 0.01;
   });
   return (
     <group position={node.position}>
-      <mesh ref={ref} onClick={onClick}>
+      <mesh
+        ref={ref}
+        onClick={onClick}
+        onPointerDown={e => { e.stopPropagation(); dragging.current = true; }}
+        onPointerUp={e => { e.stopPropagation(); dragging.current = false; }}
+        onPointerMove={e => {
+          if (dragging.current && onDrag) {
+            e.stopPropagation();
+            onDrag(node.id, e.point.x, e.point.y);
+          }
+        }}
+      >
         <sphereGeometry args={[0.2, 16, 16]} />
-        <meshStandardMaterial color="#00aaff" />
+        <meshStandardMaterial color={isCurrentUser ? '#00ff00' : '#00aaff'} />
       </mesh>
       <Html center distanceFactor={10} style={{ pointerEvents: 'none' }}>
         <div style={{ background: 'rgba(255,255,255,0.8)', padding: '2px 4px', borderRadius: '4px', fontSize: '10px' }}>
@@ -97,6 +109,11 @@ export default function GraphCanvas({ nodes, edges, onNodeClick, centerTrigger, 
   }, [nodes, edges, centerTrigger]);
 
   const nodeMap = Object.fromEntries(simNodes.map((n: any) => [n.id, n]));
+  // Handler for dragging nodes
+  const handleNodeDrag = (id: string, x: number, y: number) => {
+    setSimNodes(prev => prev.map(n => n.id === id ? { ...n, x, y, position: [x, y, n.position[2]] } : n));
+    if (simulationRef.current) simulationRef.current.alpha(1).restart();
+  };
   // Recentering camera on current user node
   useEffect(() => {
     if (centerOnMeTrigger !== undefined && currentUserId && controlsRef.current) {
@@ -120,7 +137,13 @@ export default function GraphCanvas({ nodes, edges, onNodeClick, centerTrigger, 
         return <EdgeLine key={i} edge={e} nodeMap={nodeMap} />;
       })}
       {simNodes.map(n => (
-        <NodeSphere key={n.id} node={n} onClick={() => onNodeClick(n)} />
+        <NodeSphere
+          key={n.id}
+          node={n}
+          onClick={() => onNodeClick(n)}
+          isCurrentUser={n.id === currentUserId}
+          onDrag={handleNodeDrag}
+        />
       ))}
       <OrbitControls ref={controlsRef} enablePan enableZoom enableRotate />
     </Canvas>
