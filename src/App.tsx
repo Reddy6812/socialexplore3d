@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './Layout';
@@ -75,13 +75,24 @@ const SearchPanel = styled.div`
 
 export default function App() {
   const [users, setUsers] = useState<AppUser[]>(initialUsers);
-  const [user, setUser] = useState<AppUser | null>(null);
+  const [user, setUser] = useState<AppUser | null>(() => {
+    const stored = localStorage.getItem('socialexplore3d_currentUser');
+    return stored ? JSON.parse(stored) : null;
+  });
   const [searchTerm, setSearchTerm] = useState('');
   const [showSettings, setShowSettings] = useState(false);
   const [selected, setSelected] = useState<NodeData | null>(null);
   const graph = useGraphData(user?.isAdmin ? undefined : user?.id);
   const { addNode } = graph;
   const postData = usePostData();
+
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem('socialexplore3d_currentUser', JSON.stringify(user));
+    } else {
+      localStorage.removeItem('socialexplore3d_currentUser');
+    }
+  }, [user]);
 
   // Authentication handlers
   const loginHandler = (email: string, password: string): boolean => {
