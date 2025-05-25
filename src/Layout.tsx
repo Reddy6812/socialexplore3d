@@ -39,7 +39,7 @@ export default function Layout({ user, onLogout }: { user: any; onLogout: () => 
           <Typography variant="body1" sx={{ mr: 2 }}>
             {user.label}
           </Typography>
-          <IconButton color="inherit" onClick={onLogout}>
+          <IconButton color="inherit" onClick={() => { onLogout(); navigate('/login'); }}>
             Logout
           </IconButton>
         </Toolbar>
