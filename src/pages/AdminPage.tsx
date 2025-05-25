@@ -18,44 +18,13 @@ const Container = styled.div`
   position: relative;
 `;
 
-const RandomButton = styled.button`
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  z-index: 11;
-  padding: 8px 12px;
-  background: #007bff;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-`;
-
 const AdminPage: FC<AdminPageProps> = ({ user, users, graph, postData }) => {
-  const { posts, addPost, deletePost, toggleLike, addComment } = postData;
+  const { posts, addPost, deletePost } = postData;
   const [selected, setSelected] = useState<NodeData | null>(null);
-
-  const handleRandomConnect = () => {
-    graph.nodes.forEach(n => {
-      const others = graph.nodes.filter(m => m.id !== n.id);
-      if (others.length > 0) {
-        const random = others[Math.floor(Math.random() * others.length)];
-        graph.addEdge(n.id, random.id);
-      }
-    });
-  };
 
   return (
     <Container>
-      <RandomButton onClick={handleRandomConnect}>
-        Random Connect
-      </RandomButton>
-      <GraphCanvas
-        nodes={graph.nodes}
-        edges={graph.edges}
-        onNodeClick={setSelected}
-        currentUserId={user.id}
-      />
+      <GraphCanvas nodes={graph.nodes} edges={graph.edges} onNodeClick={setSelected} />
       {selected && (
         <NodeCard
           node={selected}
@@ -73,8 +42,6 @@ const AdminPage: FC<AdminPageProps> = ({ user, users, graph, postData }) => {
           posts={posts}
           onAddPost={addPost}
           onDeletePost={deletePost}
-          onToggleLike={toggleLike}
-          onAddComment={addComment}
           profileVisibility={users.find(u => u.id === selected.id)?.profileVisibility ?? 'public'}
           onClose={() => setSelected(null)}
         />

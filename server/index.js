@@ -2,37 +2,13 @@ const express = require('express');
 const path = require('path');
 const http = require('http');
 const { Server } = require('socket.io');
-const fs = require('fs');
 
 const app = express();
 // Serve static files from the Vite build
 app.use(express.static(path.join(__dirname, '../dist')));
-app.use(express.json());
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: { origin: '*' }
-});
-
-// Add user data persistence
-const usersFile = path.join(__dirname, 'users.json');
-let users = [];
-try {
-  users = JSON.parse(fs.readFileSync(usersFile, 'utf-8'));
-} catch {
-  users = [];
-}
-// Serve users list
-app.get('/api/users', (req, res) => {
-  res.json(users);
-});
-// Create new user
-app.post('/api/users', (req, res) => {
-  const { email, password, label } = req.body;
-  const id = Date.now().toString();
-  const newUser = { id, email, password, label, showConnections: true, profileVisibility: 'public', isAdmin: false };
-  users.push(newUser);
-  fs.writeFileSync(usersFile, JSON.stringify(users, null, 2));
-  res.status(201).json(newUser);
 });
 
 io.on('connection', socket => {

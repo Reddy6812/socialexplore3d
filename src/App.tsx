@@ -89,13 +89,6 @@ export default function App() {
     const stored = localStorage.getItem('socialexplore3d_currentUser');
     return stored ? JSON.parse(stored) : null;
   });
-  // Load users from backend
-  useEffect(() => {
-    fetch('/api/users')
-      .then(res => res.json())
-      .then((data: AppUser[]) => setUsers(data))
-      .catch(err => console.error('Failed to load users', err));
-  }, []);
   const [searchTerm, setSearchTerm] = useState('');
   const [showSettings, setShowSettings] = useState(false);
   const [selected, setSelected] = useState<NodeData | null>(null);
