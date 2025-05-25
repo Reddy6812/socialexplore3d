@@ -11,7 +11,8 @@ FROM node:18-alpine
 WORKDIR /app
 # Copy only production dependencies
 COPY package*.json ./
-RUN npm install --production
+# Install only production deps without running postinstall scripts
+RUN npm install --production --ignore-scripts
 # Copy build output and server code
 COPY --from=client-builder /app/dist ./dist
 COPY --from=client-builder /app/server ./server
