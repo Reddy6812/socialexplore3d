@@ -32,13 +32,21 @@ export function useChatData(currentUserId: string) {
   useEffect(() => {
     if (!socket) return;
     const handler = (msg: { chatId: string; id: string; senderId: string; text?: string; audioUrl?: string; timestamp: number }) => {
-      setChats(prev =>
-        prev.map(c =>
-          c.id === msg.chatId
-            ? { ...c, messages: [...c.messages, { id: msg.id, senderId: msg.senderId, text: msg.text, audioUrl: msg.audioUrl, timestamp: msg.timestamp }] }
-            : c
-        )
-      );
+      setChats(prev => {
+        const exists = prev.find(c => c.id === msg.chatId);
+        if (exists) {
+          return prev.map(c =>
+            c.id === msg.chatId
+              ? { ...c, messages: [...c.messages, { id: msg.id, senderId: msg.senderId, text: msg.text, audioUrl: msg.audioUrl, timestamp: msg.timestamp }] }
+              : c
+          );
+        }
+        // create new chat for incoming message
+        return [
+          ...prev,
+          { id: msg.chatId, participants: [currentUserId, msg.senderId], messages: [{ id: msg.id, senderId: msg.senderId, text: msg.text, audioUrl: msg.audioUrl, timestamp: msg.timestamp }] }
+        ];
+      });
     };
     socket.on('chatMessage', handler);
     return () => { socket.off('chatMessage', handler); };

@@ -31,12 +31,14 @@ io.on('connection', socket => {
 
   // relay chat messages
   socket.on('chatMessage', (msg) => {
-    io.to('global').emit('chatMessage', msg);
+    // broadcast to others in the room
+    socket.broadcast.to('global').emit('chatMessage', msg);
   });
 
   // relay friend requests
   socket.on('friendRequest', (req) => {
-    io.to('global').emit('friendRequest', req);
+    // broadcast to others in the room
+    socket.broadcast.to('global').emit('friendRequest', req);
   });
 });
 
