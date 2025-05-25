@@ -1,4 +1,4 @@
-import React, { FC, ReactNode, useRef, useEffect, useState, useMemo } from 'react';
+import React, { FC, useRef, useEffect, useState, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Html } from '@react-three/drei';
 import { NodeData, EdgeData } from '../hooks/useGraphData';
@@ -78,13 +78,6 @@ interface Props {
   sphereRadius?: number;
 }
 
-// Component to auto-rotate its children
-const RotatingGroup: FC<{ autoRotate: boolean; children?: ReactNode }> = ({ autoRotate, children }) => {
-  const ref = useRef<any>(null);
-  useFrame(() => { if (autoRotate && ref.current) ref.current.rotation.y += 0.002; });
-  return <group ref={ref}>{children}</group>;
-}
-
 export default function GraphCanvas({ nodes, edges, onNodeClick, autoRotate = false, currentUserId, sphereRadius = 5 }: Props) {
   // Initial radial positions: center + sphere
   const positions = useMemo(() => {
@@ -112,7 +105,7 @@ export default function GraphCanvas({ nodes, edges, onNodeClick, autoRotate = fa
 
   return (
     <Canvas style={{ background: '#111' }} camera={{ position: [0, 0, sphereRadius * 2], fov: 50 }}>
-      <RotatingGroup autoRotate={autoRotate}>
+      <group>
         {/* Outline sphere */}
         <mesh>
           <sphereGeometry args={[sphereRadius, 32, 32]} />
@@ -139,10 +132,10 @@ export default function GraphCanvas({ nodes, edges, onNodeClick, autoRotate = fa
             sphereRadius={sphereRadius}
           />
         ))}
-      </RotatingGroup>
+      </group>
       <ambientLight intensity={0.5} />
       <pointLight position={[10, 10, 10]} />
-      <OrbitControls enablePan enableZoom enableRotate />
+      <OrbitControls enablePan enableZoom enableRotate autoRotate={autoRotate} autoRotateSpeed={1.0} />
     </Canvas>
   );
 } 
