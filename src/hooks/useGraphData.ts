@@ -89,8 +89,8 @@ export function useGraphData(userId?: string) {
       }
     }
   }, [nodesKey, nodes]);
-  // Persist edges per user, fallback to initial edges for this user
-  const edgesKey = userId ? `socialexplore3d_edges_${userId}` : null;
+  // Persist edges per user or globally for admin
+  const edgesKey = userId ? `socialexplore3d_edges_${userId}` : 'socialexplore3d_edges_global';
   const [edges, setEdges] = useState<EdgeData[]>(() => {
     if (edgesKey) {
       const stored = localStorage.getItem(edgesKey);
