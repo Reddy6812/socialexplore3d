@@ -54,26 +54,33 @@ export default function GraphCanvas({ nodes, edges, onNodeClick }: Props) {
 
   // Initialize and update simulation when nodes or edges change
   useEffect(() => {
-    // Deep copy nodes to avoid mutating props
-    const simNodesCopy = nodes.map(n => ({ ...n }));
+    // Initialize simulation nodes with x/y coordinates
+    const simNodesCopy: any[] = nodes.map(n => ({
+      ...n,
+      x: n.position[0],
+      y: n.position[1]
+    }));
     setSimNodes(simNodesCopy);
-    // Stop previous simulation if exists
+    // Stop previous simulation
     if (simulationRef.current) simulationRef.current.stop();
+    // Build link data for d3-force
+    const linkData = edges.map(e => ({ source: e.from, target: e.to }));
     // Create force simulation
     simulationRef.current = forceSimulation(simNodesCopy)
       .force('charge', forceManyBody().strength(-50))
-      .force('link', forceLink(edges).id((d: any) => d.id).distance(2))
+      .force('link', forceLink(linkData).id((d: any) => d.id).distance(2))
       .force('center', forceCenter(0, 0));
     simulationRef.current.on('tick', () => {
-      // Trigger re-render
-      setSimNodes([...simNodesCopy]);
+      // Update positions from simulation and trigger render
+      setSimNodes(simNodesCopy.map(n => ({
+        ...n,
+        position: [n.x || 0, n.y || 0, (n.position && n.position[2]) || 0]
+      })));
     });
-    return () => {
-      simulationRef.current.stop();
-    };
+    return () => simulationRef.current.stop();
   }, [nodes, edges]);
 
-  const nodeMap = Object.fromEntries(simNodes.map(n => [n.id, n]));
+  const nodeMap = Object.fromEntries(simNodes.map((n: any) => [n.id, n]));
 
   return (
     <Canvas camera={{ position: [0, 0, 5] }}>
