@@ -22,7 +22,7 @@ export function useCollaboration(currentUserId: string) {
     });
 
     return () => {
-      socket.emit('disconnect');
+      // Clean up socket on unmount
       socket.disconnect();
     };
   }, [currentUserId]);
