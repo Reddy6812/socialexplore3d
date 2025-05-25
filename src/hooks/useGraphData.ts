@@ -57,9 +57,31 @@ export function useGraphData(userId?: string) {
     );
     initEdges = userEdges;
   }
+  // Persist nodes per user, fallback to initial nodes for this user
+  const nodesKey = userId ? `socialexplore3d_nodes_${userId}` : 'socialexplore3d_nodes_global';
+  const [nodes, setNodes] = useState<NodeData[]>(() => {
+    if (nodesKey) {
+      try {
+        const stored = localStorage.getItem(nodesKey);
+        if (stored) return JSON.parse(stored);
+      } catch (e) {
+        console.error('Failed to parse stored nodes', e);
+      }
+    }
+    return initNodes;
+  });
+  // Persist nodes on change
+  useEffect(() => {
+    if (nodesKey) {
+      try {
+        localStorage.setItem(nodesKey, JSON.stringify(nodes));
+      } catch (e) {
+        console.error('Failed to persist nodes', e);
+      }
+    }
+  }, [nodesKey, nodes]);
   // Persist edges per user, fallback to initial edges for this user
   const edgesKey = userId ? `socialexplore3d_edges_${userId}` : null;
-  const [nodes, setNodes] = useState<NodeData[]>(initNodes);
   const [edges, setEdges] = useState<EdgeData[]>(() => {
     if (edgesKey) {
       try {
@@ -71,16 +93,6 @@ export function useGraphData(userId?: string) {
     }
     return initEdges;
   });
-  // Persist edges on change
-  useEffect(() => {
-    if (edgesKey) {
-      try {
-        localStorage.setItem(edgesKey, JSON.stringify(edges));
-      } catch (e) {
-        console.error('Failed to persist edges', e);
-      }
-    }
-  }, [edgesKey, edges]);
   const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
 
   /** Add a new node (friend) with auto-generated unique ID */
