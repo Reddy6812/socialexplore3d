@@ -43,7 +43,8 @@ const ExplorerPage: FC<ExplorerPageProps> = ({ user, users, graph, postData }) =
     for (let d = 1; d <= maxDist; d++) {
       const next = new Set<string>();
       current.forEach(id => {
-        adjacency[id].forEach(neigh => {
+        // guard adjacency in case it's undefined
+        (adjacency[id] || []).forEach(neigh => {
           if (!visited.has(neigh)) {
             visited.add(neigh);
             next.add(neigh);
