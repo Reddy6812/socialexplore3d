@@ -106,11 +106,6 @@ export default function GraphCanvas({ nodes, edges, onNodeClick, autoRotate = fa
   return (
     <Canvas style={{ background: '#111' }} camera={{ position: [0, 0, sphereRadius * 2], fov: 50 }}>
       <group>
-        {/* Outline sphere */}
-        <mesh>
-          <sphereGeometry args={[sphereRadius, 32, 32]} />
-          <meshBasicMaterial wireframe color="#444" />
-        </mesh>
         {/* Edges to center for each friend */}
         {edges.map((e, i) => {
           // Only show edges radiating from/to center
