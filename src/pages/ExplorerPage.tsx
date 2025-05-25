@@ -55,7 +55,10 @@ const ExplorerPage: FC<ExplorerPageProps> = ({ user, users, graph, postData }) =
     }
     return visited;
   };
-  const reachable = computeReachable(user.id, degree);
+  // If admin, show entire graph; otherwise restrict by degree
+  const reachable = user.isAdmin
+    ? new Set(graph.nodes.map(n => n.id))
+    : computeReachable(user.id, degree);
 
   // Nodes and edges for GraphCanvas: filter graph data by reachability
   const nodesForCanvas = graph.nodes.filter(n => reachable.has(n.id));
