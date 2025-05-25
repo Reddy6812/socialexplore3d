@@ -130,20 +130,28 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginPage onLogin={loginHandler} onSignup={signupHandler} />} />
-        <Route path="/" element={user ? <Layout user={user} onLogout={() => setUser(null)} /> : <Navigate to="/login" /> }>
-          <Route index element={<Navigate to="home" />} />
-          <Route path="home" element={<HomePage user={user} users={users} postData={postData} graph={graph} />} />
-          <Route path="explorer" element={<ExplorerPage user={user} users={users} graph={graph} postData={postData} />} />
-          <Route path="search" element={<SearchPage users={users} graphEdges={graph.edges} currentUserId={user!.id} />} />
-          <Route path="friends" element={<FriendsPage user={user} />} />
-          <Route path="events" element={<EventsPage user={user} />} />
-          <Route path="events/:id" element={<EventPage user={user} users={users} />} />
-          <Route path="analytics" element={<AnalyticsPage user={user} />} />
-          <Route path="profile/:id" element={<ProfilePage user={user} users={users} graph={graph} postData={postData} />} />
-          <Route path="chats" element={<ChatsPage user={user} users={users} />} />
-          <Route path="chats/:chatId" element={<ChatPage user={user} users={users} />} />
-          <Route path="settings" element={<SettingsPage user={user} users={users} setUsers={setUsers} setCurrentUser={setUser} />} />
-          {user?.isAdmin && <Route path="admin" element={<AdminPage user={user} graph={graph} users={users} postData={postData} />} />}
+        <Route path="/" element={
+          user ? <Layout user={user} onLogout={() => setUser(null)} /> : <Navigate to="/login" />
+        }>
+          {user && (
+            <>
+              <Route index element={<Navigate to="home" />} />
+              <Route path="home" element={<HomePage user={user} users={users} postData={postData} graph={graph} />} />
+              <Route path="explorer" element={<ExplorerPage user={user} users={users} graph={graph} postData={postData} />} />
+              <Route path="search" element={<SearchPage users={users} graphEdges={graph.edges} currentUserId={user.id} />} />
+              <Route path="friends" element={<FriendsPage user={user} />} />
+              <Route path="events" element={<EventsPage user={user} />} />
+              <Route path="events/:id" element={<EventPage user={user} users={users} />} />
+              <Route path="analytics" element={<AnalyticsPage user={user} />} />
+              <Route path="profile/:id" element={<ProfilePage user={user} users={users} graph={graph} postData={postData} />} />
+              <Route path="chats" element={<ChatsPage user={user} users={users} />} />
+              <Route path="chats/:chatId" element={<ChatPage user={user} users={users} />} />
+              <Route path="settings" element={<SettingsPage user={user} users={users} setUsers={setUsers} setCurrentUser={setUser} />} />
+              {user.isAdmin && (
+                <Route path="admin" element={<AdminPage user={user} graph={graph} users={users} postData={postData} />} />
+              )}
+            </>
+          )}
         </Route>
         <Route path="*" element={<Navigate to={user ? "/explorer" : "/login"} />} />
       </Routes>
