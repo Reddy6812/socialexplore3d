@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useCollaboration } from './useCollaboration';
 
 export interface Message {
   id: string;
@@ -15,6 +16,7 @@ export interface Chat {
 }
 
 export function useChatData(currentUserId: string) {
+  const { socket } = useCollaboration(currentUserId);
   const storageKey = 'socialexplore3d_chats';
   const [chats, setChats] = useState<Chat[]>(() => {
     try {
@@ -56,6 +58,8 @@ export function useChatData(currentUserId: string) {
     setChats(prev =>
       prev.map(c => (c.id === chatId ? { ...c, messages: [...c.messages, newMessage] } : c))
     );
+    // Broadcast to other clients
+    socket?.emit('chatMessage', { chatId, ...newMessage });
   };
 
   return { chats: userChats, startChat, sendMessage };

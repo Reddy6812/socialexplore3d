@@ -32,5 +32,5 @@ export function useCollaboration(currentUserId: string) {
     setPresenceMap(prev => ({ ...prev, [currentUserId]: nodeId }));
   };
 
-  return { presenceMap, setPresence };
+  return { presenceMap, setPresence, socket: socketRef.current };
 } 

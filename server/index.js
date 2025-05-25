@@ -28,6 +28,16 @@ io.on('connection', socket => {
   socket.on('disconnect', () => {
     if (userId) io.to('global').emit('presence', { userId, nodeId: null });
   });
+
+  // relay chat messages
+  socket.on('chatMessage', (msg) => {
+    io.to('global').emit('chatMessage', msg);
+  });
+
+  // relay friend requests
+  socket.on('friendRequest', (req) => {
+    io.to('global').emit('friendRequest', req);
+  });
 });
 
 // Fallback: serve index.html for any other routes
