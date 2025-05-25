@@ -31,7 +31,7 @@ io.on('connection', socket => {
 });
 
 // Fallback: serve index.html for any other routes
-app.get('*', (req, res) => {
+app.get(/.*/, (req, res) => {
   res.sendFile(path.join(__dirname, '../dist/index.html'));
 });
 
