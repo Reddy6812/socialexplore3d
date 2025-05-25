@@ -28,6 +28,22 @@ export function useChatData(currentUserId: string) {
     }
   });
 
+  // Subscribe to real-time incoming messages
+  useEffect(() => {
+    if (!socket) return;
+    const handler = (msg: { chatId: string; id: string; senderId: string; text?: string; audioUrl?: string; timestamp: number }) => {
+      setChats(prev =>
+        prev.map(c =>
+          c.id === msg.chatId
+            ? { ...c, messages: [...c.messages, { id: msg.id, senderId: msg.senderId, text: msg.text, audioUrl: msg.audioUrl, timestamp: msg.timestamp }] }
+            : c
+        )
+      );
+    };
+    socket.on('chatMessage', handler);
+    return () => { socket.off('chatMessage', handler); };
+  }, [socket]);
+
   useEffect(() => {
     try {
       localStorage.setItem(storageKey, JSON.stringify(chats));

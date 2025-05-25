@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useCollaboration } from './useCollaboration';
 
 /** Node data with optional contact info and 3D position */
 export interface NodeData {
@@ -42,6 +43,7 @@ export const initialEdgesGlobal: EdgeData[] = [
  * @param userId if provided, only include that user's node and direct friends
  */
 export function useGraphData(userId?: string) {
+  const { socket } = useCollaboration(userId!);
   // Determine initial nodes/edges based on logged-in user
   let initNodes = initialNodesGlobal;
   let initEdges = initialEdgesGlobal;
@@ -102,6 +104,18 @@ export function useGraphData(userId?: string) {
   });
   const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
 
+  // Subscribe to real-time incoming friend requests
+  useEffect(() => {
+    if (!socket) return;
+    const handler = (req: FriendRequest) => {
+      if (req.to === userId) {
+        setFriendRequests(prev => [...prev, req]);
+      }
+    };
+    socket.on('friendRequest', handler);
+    return () => { socket.off('friendRequest', handler); };
+  }, [socket, userId]);
+
   /** Add a new node (friend) with auto-generated unique ID */
   const addNode = (node: Omit<NodeData, 'id' | 'position'>) => {
     const id = Date.now().toString();
@@ -141,7 +155,9 @@ export function useGraphData(userId?: string) {
       return;
     }
     const id = Date.now().toString();
-    setFriendRequests(prev => [...prev, { id, from, to }]);
+    const request: FriendRequest = { id, from, to };
+    setFriendRequests(prev => [...prev, request]);
+    socket?.emit('friendRequest', request);
   };
 
   /** Approve a pending friend request by ID */
@@ -150,6 +166,7 @@ export function useGraphData(userId?: string) {
     const req = friendRequests.find(r => r.id === requestId);
     if (req) {
       addEdge(req.from, req.to);
+      socket?.emit('friendRequest', { ...req, approved: true });
     }
   };
 
