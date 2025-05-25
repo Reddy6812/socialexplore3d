@@ -8,6 +8,9 @@ interface Props {
   nodes: NodeData[];
   edges: EdgeData[];
   onNodeClick: (node: NodeData) => void;
+  centerTrigger?: boolean;
+  centerOnMeTrigger?: number;
+  currentUserId?: string;
 }
 
 const NodeSphere: FC<{ node: NodeData; onClick: () => void }> = ({ node, onClick }) => {
@@ -47,13 +50,19 @@ const EdgeLine: FC<{ edge: EdgeData; nodeMap: Record<string, NodeData> }> = ({ e
   );
 };
 
-export default function GraphCanvas({ nodes, edges, onNodeClick }: Props) {
+export default function GraphCanvas({ nodes, edges, onNodeClick, centerTrigger, centerOnMeTrigger, currentUserId }: Props) {
   // Maintain simulation state for dynamic layout
   const [simNodes, setSimNodes] = useState<NodeData[]>([]);
   const simulationRef = useRef<any>(null);
+  const controlsRef = useRef<any>(null);
 
   // Initialize and update simulation when nodes or edges change
   useEffect(() => {
+    // Centering effect: reapply center force and reset camera
+    if (centerTrigger && simulationRef.current && controlsRef.current) {
+      simulationRef.current.force('center', forceCenter(0, 0)).alpha(1).restart();
+      controlsRef.current.reset();
+    }
     try {
       // Initialize simulation nodes with random x/y coordinates for free movement
       const simNodesCopy: any[] = nodes.map(n => ({
@@ -85,9 +94,20 @@ export default function GraphCanvas({ nodes, edges, onNodeClick }: Props) {
     return () => {
       if (simulationRef.current) simulationRef.current.stop();
     };
-  }, [nodes, edges]);
+  }, [nodes, edges, centerTrigger]);
 
   const nodeMap = Object.fromEntries(simNodes.map((n: any) => [n.id, n]));
+  // Recentering camera on current user node
+  useEffect(() => {
+    if (centerOnMeTrigger !== undefined && currentUserId && controlsRef.current) {
+      const node = nodeMap[currentUserId];
+      if (node && node.position) {
+        // Move camera target to user node
+        controlsRef.current.target.set(node.position[0], node.position[1], node.position[2] || 0);
+        controlsRef.current.update();
+      }
+    }
+  }, [centerOnMeTrigger, currentUserId, nodeMap]);
 
   return (
     <Canvas camera={{ position: [0, 0, 5] }}>
@@ -102,7 +122,7 @@ export default function GraphCanvas({ nodes, edges, onNodeClick }: Props) {
       {simNodes.map(n => (
         <NodeSphere key={n.id} node={n} onClick={() => onNodeClick(n)} />
       ))}
-      <OrbitControls enablePan enableZoom enableRotate />
+      <OrbitControls ref={controlsRef} enablePan enableZoom enableRotate />
     </Canvas>
   );
 } 
