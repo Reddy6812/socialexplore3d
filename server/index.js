@@ -26,6 +26,11 @@ io.on('connection', socket => {
     socket.join(chatId);
   });
 
+  // relay WebRTC signaling data to other participants in the chat room
+  socket.on('video-signal', data => {
+    socket.broadcast.to(data.chatId).emit('video-signal', data);
+  });
+
   socket.on('presence', ({ userId: uid, nodeId }) => {
     io.to('global').emit('presence', { userId: uid, nodeId });
   });
