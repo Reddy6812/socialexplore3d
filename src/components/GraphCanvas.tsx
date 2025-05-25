@@ -1,7 +1,8 @@
-import React, { FC, useRef } from 'react';
+import React, { FC, useRef, useEffect, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Html } from '@react-three/drei';
 import { NodeData, EdgeData } from '../hooks/useGraphData';
+import { forceSimulation, forceManyBody, forceLink, forceCenter } from 'd3-force';
 
 interface Props {
   nodes: NodeData[];
@@ -47,19 +48,44 @@ const EdgeLine: FC<{ edge: EdgeData; nodeMap: Record<string, NodeData> }> = ({ e
 };
 
 export default function GraphCanvas({ nodes, edges, onNodeClick }: Props) {
-  const nodeMap = Object.fromEntries(nodes.map(n => [n.id, n]));
+  // Maintain simulation state for dynamic layout
+  const [simNodes, setSimNodes] = useState<NodeData[]>([]);
+  const simulationRef = useRef<any>(null);
+
+  // Initialize and update simulation when nodes or edges change
+  useEffect(() => {
+    // Deep copy nodes to avoid mutating props
+    const simNodesCopy = nodes.map(n => ({ ...n }));
+    setSimNodes(simNodesCopy);
+    // Stop previous simulation if exists
+    if (simulationRef.current) simulationRef.current.stop();
+    // Create force simulation
+    simulationRef.current = forceSimulation(simNodesCopy)
+      .force('charge', forceManyBody().strength(-50))
+      .force('link', forceLink(edges).id((d: any) => d.id).distance(2))
+      .force('center', forceCenter(0, 0));
+    simulationRef.current.on('tick', () => {
+      // Trigger re-render
+      setSimNodes([...simNodesCopy]);
+    });
+    return () => {
+      simulationRef.current.stop();
+    };
+  }, [nodes, edges]);
+
+  const nodeMap = Object.fromEntries(simNodes.map(n => [n.id, n]));
 
   return (
     <Canvas camera={{ position: [0, 0, 5] }}>
       <ambientLight intensity={0.5} />
       <pointLight position={[10, 10, 10]} />
       {edges.map((e, i) => {
-        const fromNode = nodeMap[e.from];
-        const toNode = nodeMap[e.to];
-        if (!fromNode || !toNode) return null;
+        const from = nodeMap[e.from]?.position;
+        const to = nodeMap[e.to]?.position;
+        if (!from || !to) return null;
         return <EdgeLine key={i} edge={e} nodeMap={nodeMap} />;
       })}
-      {nodes.map(n => (
+      {simNodes.map(n => (
         <NodeSphere key={n.id} node={n} onClick={() => onNodeClick(n)} />
       ))}
       <OrbitControls enablePan enableZoom enableRotate />
