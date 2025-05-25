@@ -14,6 +14,7 @@ interface ExplorerPageProps {
 const ExplorerPage: FC<ExplorerPageProps> = ({ user, users, graph, postData }) => {
   const [selected, setSelected] = useState<NodeData | null>(null);
   const [centerTrigger, setCenterTrigger] = useState(false);
+  const [centerOnMeTrigger, setCenterOnMeTrigger] = useState(0);
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
@@ -23,10 +24,18 @@ const ExplorerPage: FC<ExplorerPageProps> = ({ user, users, graph, postData }) =
       >
         Center
       </button>
+      <button
+        style={{ position: 'absolute', top: 10, left: 80, zIndex: 20 }}
+        onClick={() => setCenterOnMeTrigger(prev => prev + 1)}
+      >
+        Go To Me
+      </button>
       <GraphCanvas
         nodes={graph.nodes}
         edges={user.showConnections || user.isAdmin ? graph.edges : []}
         centerTrigger={centerTrigger}
+        centerOnMeTrigger={centerOnMeTrigger}
+        currentUserId={user.id}
         onNodeClick={setSelected}
       />
       {selected && (
