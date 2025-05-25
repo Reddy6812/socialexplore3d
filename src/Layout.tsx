@@ -17,6 +17,7 @@ export default function Layout({ user, onLogout }: { user: any; onLogout: () => 
   const navigate = useNavigate();
   const menuItems = [
     { text: 'Home', path: '/home' },
+    { text: 'Search', path: '/search' },
     { text: 'Explorer', path: '/explorer' },
     { text: 'Friends', path: '/friends' },
     { text: 'Settings', path: '/settings' },

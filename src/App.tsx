@@ -6,6 +6,7 @@ import LoginPage from './pages/LoginPage.tsx';
 import HomePage from './pages/HomePage.tsx';
 import ExplorerPage from './pages/ExplorerPage.tsx';
 import SettingsPage from './pages/SettingsPage.tsx';
+import SearchPage from './pages/SearchPage.tsx';
 import FriendsPage from './pages/FriendsPage.tsx';
 import AdminPage from './pages/AdminPage.tsx';
 import { useGraphData, NodeData } from './hooks/useGraphData';
@@ -127,6 +128,7 @@ export default function App() {
           <Route index element={<Navigate to="home" />} />
           <Route path="home" element={<HomePage user={user} users={users} postData={postData} graph={graph} />} />
           <Route path="explorer" element={<ExplorerPage user={user} users={users} graph={graph} postData={postData} />} />
+          <Route path="search" element={<SearchPage users={users} />} />
           <Route path="friends" element={<FriendsPage user={user} />} />
           <Route path="settings" element={<SettingsPage user={user} users={users} setUsers={setUsers} />} />
           {user?.isAdmin && <Route path="admin" element={<AdminPage user={user} graph={graph} users={users} postData={postData} />} />}
