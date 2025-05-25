@@ -2,7 +2,7 @@ import React, { FC, useState } from 'react';
 import styled from 'styled-components';
 
 interface Props {
-  onAdd: (node: { id: string; label: string; phone: string; address: string }) => void;
+  onAdd: (node: { label: string; phone?: string; address?: string }) => void;
 }
 
 const Form = styled.form`
@@ -34,16 +34,14 @@ const Button = styled.button`
 `;
 
 const AddPersonForm: FC<Props> = ({ onAdd }) => {
-  const [id, setId] = useState('');
   const [label, setLabel] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!id.trim() || !label.trim()) return;
-    onAdd({ id: id.trim(), label: label.trim(), phone: phone.trim(), address: address.trim() });
-    setId('');
+    if (!label.trim()) return;
+    onAdd({ label: label.trim(), phone: phone.trim() || undefined, address: address.trim() || undefined });
     setLabel('');
     setPhone('');
     setAddress('');
@@ -51,12 +49,6 @@ const AddPersonForm: FC<Props> = ({ onAdd }) => {
 
   return (
     <Form onSubmit={handleSubmit}>
-      <Input
-        type="text"
-        placeholder="ID"
-        value={id}
-        onChange={e => setId(e.target.value)}
-      />
       <Input
         type="text"
         placeholder="Name"

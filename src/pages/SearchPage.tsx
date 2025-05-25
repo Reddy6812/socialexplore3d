@@ -1,5 +1,6 @@
 import React, { FC, useState } from 'react';
 import styled from 'styled-components';
+import { EdgeData } from '../hooks/useGraphData';
 
 const Container = styled.div`
   padding: 16px;
@@ -28,12 +29,30 @@ const ListItem = styled.li`
 `;
 
 interface SearchPageProps {
-  users: { id: string; label: string }[];
+  users: { id: string; label: string; profileVisibility: 'public' | 'friends' | 'private'; isAdmin: boolean }[];
+  graphEdges: EdgeData[];
+  currentUserId: string;
 }
 
-const SearchPage: FC<SearchPageProps> = ({ users }) => {
+const SearchPage: FC<SearchPageProps> = ({ users, graphEdges, currentUserId }) => {
   const [term, setTerm] = useState('');
-  const filtered = users.filter(u => u.label.toLowerCase().includes(term.toLowerCase()));
+  const filtered = users.filter(u => {
+    if (!u.label.toLowerCase().includes(term.toLowerCase())) return false;
+    const vis = u.profileVisibility;
+    // Public profiles always visible
+    if (vis === 'public') return true;
+    // Private: only self or admin
+    if (vis === 'private') return u.id === currentUserId || u.isAdmin;
+    // Friends: direct edge or self or admin
+    if (vis === 'friends') {
+      if (u.id === currentUserId || u.isAdmin) return true;
+      return graphEdges.some(e =>
+        (e.from === currentUserId && e.to === u.id) ||
+        (e.from === u.id && e.to === currentUserId)
+      );
+    }
+    return false;
+  });
 
   return (
     <Container>
