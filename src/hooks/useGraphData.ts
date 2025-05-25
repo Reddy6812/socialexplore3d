@@ -25,9 +25,10 @@ export interface FriendRequest {
 
 /** Default global node list (mock) */
 export const initialNodesGlobal: NodeData[] = [
-  { id: '1', label: 'Alice', phone: '', address: '', position: [0, 0, 0] },
-  { id: '2', label: 'Bob', phone: '', address: '', position: [2, 1, 0] },
-  { id: '3', label: 'Carol', phone: '', address: '', position: [-2, 1, 0] }
+  { id: '0', label: 'Admin', phone: '', address: '', position: [0, 0, 0] },
+  { id: '1', label: 'Alice', phone: '', address: '', position: [2, 1, 0] },
+  { id: '2', label: 'Bob', phone: '', address: '', position: [-2, 1, 0] },
+  { id: '3', label: 'Carol', phone: '', address: '', position: [0, 2, 0] }
 ];
 
 /** Default global edge list (mock friendships) */
