@@ -1,8 +1,11 @@
-import React, { FC, useState } from 'react';
+import React, { FC, useState, useRef } from 'react';
 import styled from 'styled-components';
 import { NodeData, EdgeData, FriendRequest } from '../hooks/useGraphData';
 import { Post } from '../hooks/usePostData';
 import PostForm from './PostForm';
+import { useVoiceNoteData } from '../hooks/useVoiceNoteData';
+import { useChatData } from '../hooks/useChatData';
+import { useNavigate } from 'react-router-dom';
 
 const Card = styled.div`
   position: absolute;
@@ -41,11 +44,25 @@ interface Props {
   declineRequest: (requestId: string) => void;
   profileVisibility: 'public' | 'friends' | 'private';
   posts: Post[];
-  onAddPost: (authorId: string, imageUrl: string, visibility: Post['visibility']) => void;
+  onAddPost: (
+    authorId: string,
+    imageUrl: string,
+    visibility: Post['visibility'],
+    caption: string,
+    tags: string[]
+  ) => void;
   onDeletePost: (postId: string) => void;
+  onToggleLike: (postId: string, userId: string) => void;
+  onAddComment: (postId: string, authorId: string, text: string) => void;
 }
 
-const NodeCard: FC<Props> = ({ node, onClose, nodes, edges, addEdge, removeEdge, updateNode, userId, isAdmin, friendRequests, sendRequest, approveRequest, declineRequest, profileVisibility, posts, onAddPost, onDeletePost }) => {
+const NodeCard: FC<Props> = ({ node, onClose, nodes, edges, addEdge, removeEdge, updateNode, userId, isAdmin, friendRequests, sendRequest, approveRequest, declineRequest, profileVisibility, posts, onAddPost, onDeletePost, onToggleLike, onAddComment }) => {
+  const { voiceNotes, addVoiceNote, deleteVoiceNote } = useVoiceNoteData();
+  const { startChat } = useChatData(userId);
+  const navigate = useNavigate();
+  const [isRecording, setIsRecording] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
   const otherNodes = nodes.filter(n => n.id !== node.id);
   const [selectedFriend, setSelectedFriend] = useState('');
   const [mutualList, setMutualList] = useState<NodeData[]>([]);
@@ -53,6 +70,8 @@ const NodeCard: FC<Props> = ({ node, onClose, nodes, edges, addEdge, removeEdge,
   const [editLabel, setEditLabel] = useState(node.label);
   const [editPhone, setEditPhone] = useState(node.phone || '');
   const [editAddress, setEditAddress] = useState(node.address || '');
+  const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
+  const [showVoicePanel, setShowVoicePanel] = useState(false);
 
   const findMutual = () => {
     const otherId = selectedFriend;
@@ -66,10 +85,51 @@ const NodeCard: FC<Props> = ({ node, onClose, nodes, edges, addEdge, removeEdge,
     setMutualList(nodes.filter(n => mutualIds.includes(n.id)));
   };
 
+  // Filter notes addressed to this node
+  const notesForProfile = voiceNotes.filter(v => v.to === node.id);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mr = new MediaRecorder(stream);
+      mediaRecorderRef.current = mr;
+      setAudioChunks([]);
+      mr.ondataavailable = e => { setAudioChunks(prev => [...prev, e.data]); };
+      mr.onstop = () => {
+        const blob = new Blob(audioChunks, { type: 'audio/webm' });
+        const url = URL.createObjectURL(blob);
+        addVoiceNote(userId, node.id, url);
+      };
+      mr.start();
+      setIsRecording(true);
+    } catch (err) {
+      console.error('Microphone access denied', err);
+    }
+  };
+  const stopRecording = () => {
+    mediaRecorderRef.current?.stop();
+    setIsRecording(false);
+  };
+
   return (
     <Card>
       <Close onClick={onClose}>×</Close>
       <h3>{node.label}</h3>
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+        {node.id !== userId && (
+          <button
+            onClick={() => {
+              const chatId = startChat(node.id);
+              onClose();
+              navigate(`/chats/${chatId}`);
+            }}
+            title="Message"
+          >
+            💬
+          </button>
+        )}
+        <button onClick={() => setShowVoicePanel(prev => !prev)} title="Voice Notes">🎙️</button>
+      </div>
       <p>ID: {node.id}</p>
       {/* Profile visibility enforcement */}
       {(() => {
@@ -146,6 +206,20 @@ const NodeCard: FC<Props> = ({ node, onClose, nodes, edges, addEdge, removeEdge,
                   <button
                     onClick={() => {
                       updateNode(node.id, { label: editLabel, phone: editPhone, address: editAddress });
+                      // Geocode address to lat/lng
+                      if (editAddress) {
+                        fetch(
+                          `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(editAddress)}`
+                        )
+                          .then(res => res.json())
+                          .then((results: any[]) => {
+                            if (results.length > 0) {
+                              const { lat, lon } = results[0];
+                              updateNode(node.id, { geo: [parseFloat(lat), parseFloat(lon)] });
+                            }
+                          })
+                          .catch(err => console.error('Geocode failed', err));
+                      }
                       setEditing(false);
                     }}
                   >
@@ -181,7 +255,7 @@ const NodeCard: FC<Props> = ({ node, onClose, nodes, edges, addEdge, removeEdge,
               // private posts only owner/admin
               return false;
             }).map(p => (
-              <li key={p.id}>
+              <li key={p.id} style={{ marginBottom: '12px' }}>
                 <img src={p.imageUrl} alt="Post" style={{ maxWidth: '100%' }} />
                 <p>Visibility: {p.visibility}</p>
                 {(userId === node.id || isAdmin) && (
@@ -189,9 +263,58 @@ const NodeCard: FC<Props> = ({ node, onClose, nodes, edges, addEdge, removeEdge,
                     Delete
                   </button>
                 )}
+                <p style={{ margin: '4px 0' }}>{p.likes.length} Likes</p>
+                <button onClick={() => onToggleLike(p.id, userId)} style={{ fontSize: '12px' }}>
+                  {p.likes.includes(userId) ? 'Unlike' : 'Like'}
+                </button>
+                <div style={{ marginTop: '8px' }}>
+                  <h5 style={{ margin: '4px 0' }}>Comments</h5>
+                  <ul style={{ listStyle: 'none', padding: 0, maxHeight: '100px', overflowY: 'auto' }}>
+                    {p.comments.map(c => (
+                      <li key={c.id} style={{ fontSize: '12px', marginBottom: '4px' }}>
+                        <strong>{nodes.find(n => n.id === c.authorId)?.label || c.authorId}:</strong> {c.text}
+                      </li>
+                    ))}
+                  </ul>
+                  <input
+                    type="text"
+                    value={commentInputs[p.id] || ''}
+                    placeholder="Add a comment"
+                    onChange={e => setCommentInputs(prev => ({ ...prev, [p.id]: e.target.value }))}
+                    style={{ width: '100%', boxSizing: 'border-box', fontSize: '12px' }}
+                  />
+                  <button
+                    onClick={() => {
+                      const text = commentInputs[p.id];
+                      if (text) {
+                        onAddComment(p.id, userId, text);
+                        setCommentInputs(prev => ({ ...prev, [p.id]: '' }));
+                      }
+                    }}
+                    style={{ marginTop: '4px', fontSize: '12px' }}
+                  >
+                    Comment
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
+          {showVoicePanel && (
+            <>
+              <h4>Voice Notes</h4>
+              <button onClick={isRecording ? stopRecording : startRecording} style={{ fontSize: '12px', marginBottom: '8px' }}>
+                {isRecording ? 'Stop Recording' : 'Record Voice Note'}
+              </button>
+              <ul style={{ listStyle: 'none', padding: 0, maxHeight: '150px', overflowY: 'auto' }}>
+                {notesForProfile.map(note => (
+                  <li key={note.id} style={{ marginBottom: '8px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <audio controls src={note.audioUrl} />
+                    <button onClick={() => deleteVoiceNote(note.id)} style={{ fontSize: '12px' }}>Delete</button>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
           <h4>Connections</h4>
           <ul>
             {otherNodes.map(other => {

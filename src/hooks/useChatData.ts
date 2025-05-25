@@ -1,0 +1,62 @@
+import { useState, useEffect } from 'react';
+
+export interface Message {
+  id: string;
+  senderId: string;
+  text?: string;
+  audioUrl?: string;
+  timestamp: number;
+}
+
+export interface Chat {
+  id: string;
+  participants: string[];
+  messages: Message[];
+}
+
+export function useChatData(currentUserId: string) {
+  const storageKey = 'socialexplore3d_chats';
+  const [chats, setChats] = useState<Chat[]>(() => {
+    try {
+      const stored = localStorage.getItem(storageKey);
+      return stored ? (JSON.parse(stored) as Chat[]) : [];
+    } catch {
+      localStorage.removeItem(storageKey);
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(chats));
+    } catch (e) {
+      console.error('Failed to persist chats', e);
+    }
+  }, [chats]);
+
+  // Chats involving the current user
+  const userChats = chats.filter(c => c.participants.includes(currentUserId));
+
+  /** Start a chat with another user or return existing chat id */
+  const startChat = (otherId: string): string => {
+    const existing = chats.find(
+      c => c.participants.includes(currentUserId) && c.participants.includes(otherId)
+    );
+    if (existing) return existing.id;
+    const id = Date.now().toString();
+    const newChat: Chat = { id, participants: [currentUserId, otherId], messages: [] };
+    setChats(prev => [...prev, newChat]);
+    return id;
+  };
+
+  /** Send a message in a chat */
+  const sendMessage = (chatId: string, senderId: string, text?: string, audioUrl?: string) => {
+    const timestamp = Date.now();
+    const newMessage: Message = { id: timestamp.toString(), senderId, text, audioUrl, timestamp };
+    setChats(prev =>
+      prev.map(c => (c.id === chatId ? { ...c, messages: [...c.messages, newMessage] } : c))
+    );
+  };
+
+  return { chats: userChats, startChat, sendMessage };
+} 

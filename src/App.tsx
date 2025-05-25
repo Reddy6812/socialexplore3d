@@ -8,7 +8,13 @@ import ExplorerPage from './pages/ExplorerPage.tsx';
 import SettingsPage from './pages/SettingsPage.tsx';
 import SearchPage from './pages/SearchPage.tsx';
 import FriendsPage from './pages/FriendsPage.tsx';
+import ProfilePage from './pages/ProfilePage';
 import AdminPage from './pages/AdminPage.tsx';
+import ChatsPage from './pages/ChatsPage.tsx';
+import ChatPage from './pages/ChatPage.tsx';
+import AnalyticsPage from './pages/AnalyticsPage';
+import EventsPage from './pages/EventsPage.tsx';
+import EventPage from './pages/EventPage.tsx';
 import { useGraphData, NodeData } from './hooks/useGraphData';
 import { usePostData } from './hooks/usePostData';
 
@@ -130,6 +136,12 @@ export default function App() {
           <Route path="explorer" element={<ExplorerPage user={user} users={users} graph={graph} postData={postData} />} />
           <Route path="search" element={<SearchPage users={users} graphEdges={graph.edges} currentUserId={user!.id} />} />
           <Route path="friends" element={<FriendsPage user={user} />} />
+          <Route path="events" element={<EventsPage user={user} />} />
+          <Route path="events/:id" element={<EventPage user={user} users={users} />} />
+          <Route path="analytics" element={<AnalyticsPage user={user} />} />
+          <Route path="profile/:id" element={<ProfilePage user={user} users={users} graph={graph} postData={postData} />} />
+          <Route path="chats" element={<ChatsPage user={user} users={users} />} />
+          <Route path="chats/:chatId" element={<ChatPage user={user} users={users} />} />
           <Route path="settings" element={<SettingsPage user={user} users={users} setUsers={setUsers} setCurrentUser={setUser} />} />
           {user?.isAdmin && <Route path="admin" element={<AdminPage user={user} graph={graph} users={users} postData={postData} />} />}
         </Route>

@@ -7,6 +7,7 @@ export interface NodeData {
   phone?: string;
   address?: string;
   position: [number, number, number];
+  geo?: [number, number]; // [lat, lng]
 }
 
 /** Edge representing a bidirectional friendship between two node IDs */
@@ -23,14 +24,14 @@ export interface FriendRequest {
 }
 
 /** Default global node list (mock) */
-const initialNodesGlobal: NodeData[] = [
+export const initialNodesGlobal: NodeData[] = [
   { id: '1', label: 'Alice', phone: '', address: '', position: [0, 0, 0] },
   { id: '2', label: 'Bob', phone: '', address: '', position: [2, 1, 0] },
   { id: '3', label: 'Carol', phone: '', address: '', position: [-2, 1, 0] }
 ];
 
 /** Default global edge list (mock friendships) */
-const initialEdgesGlobal: EdgeData[] = [
+export const initialEdgesGlobal: EdgeData[] = [
   { from: '1', to: '2' },
   { from: '1', to: '3' }
 ];

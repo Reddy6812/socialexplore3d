@@ -1,6 +1,8 @@
 import React, { FC, useState } from 'react';
 import styled from 'styled-components';
 import { EdgeData } from '../hooks/useGraphData';
+import { useChatData } from '../hooks/useChatData';
+import { useNavigate } from 'react-router-dom';
 
 const Container = styled.div`
   padding: 16px;
@@ -36,6 +38,8 @@ interface SearchPageProps {
 
 const SearchPage: FC<SearchPageProps> = ({ users, graphEdges, currentUserId }) => {
   const [term, setTerm] = useState('');
+  const { startChat } = useChatData(currentUserId);
+  const navigate = useNavigate();
   const filtered = users.filter(u => {
     if (!u.label.toLowerCase().includes(term.toLowerCase())) return false;
     const vis = u.profileVisibility;
@@ -64,8 +68,21 @@ const SearchPage: FC<SearchPageProps> = ({ users, graphEdges, currentUserId }) =
       />
       <List>
         {filtered.map(u => (
-          <ListItem key={u.id}>
-            {u.label} (ID: {u.id})
+          <ListItem
+            key={u.id}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+          >
+            <span>{u.label} (ID: {u.id})</span>
+            <button
+              onClick={() => {
+                const chatId = startChat(u.id);
+                navigate(`/chats/${chatId}`);
+              }}
+              title="Message"
+              style={{ marginLeft: '8px', fontSize: '12px' }}
+            >
+              💬
+            </button>
           </ListItem>
         ))}
       </List>

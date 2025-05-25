@@ -1,4 +1,5 @@
 import React, { FC, useState } from 'react';
+import IntroScene from './IntroScene';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 
@@ -46,6 +47,7 @@ interface LoginProps {
 
 const Login: FC<LoginProps> = ({ onLogin, onSignup }) => {
   const navigate = useNavigate();
+  const [showIntro, setShowIntro] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
   const [loginError, setLoginError] = useState('');
   const [email, setEmail] = useState('');
@@ -64,7 +66,7 @@ const Login: FC<LoginProps> = ({ onLogin, onSignup }) => {
     if (!success) {
       setLoginError('Account not found. Please create one.');
     } else {
-      navigate('/');
+      setShowIntro(true);
     }
   };
 
@@ -80,6 +82,10 @@ const Login: FC<LoginProps> = ({ onLogin, onSignup }) => {
     );
     navigate('/');
   };
+
+  if (showIntro) {
+    return <IntroScene onFinish={() => navigate('/')} />;
+  }
 
   if (showSignup) {
     return (

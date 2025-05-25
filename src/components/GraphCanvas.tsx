@@ -5,6 +5,17 @@ import { NodeData, EdgeData } from '../hooks/useGraphData';
 
 // Generate points on a sphere via Fibonacci method
 function fibonacciSphere(samples: number) {
+  // Handle single point case: place on x-axis to avoid NaN
+  if (samples === 1) {
+    return [{ x: 1, y: 0, z: 0 }];
+  }
+  // Handle two-point case: opposite points on equator for visibility
+  if (samples === 2) {
+    return [
+      { x: 1, y: 0, z: 0 },
+      { x: -1, y: 0, z: 0 }
+    ];
+  }
   const points: { x: number; y: number; z: number }[] = [];
   const goldenAngle = Math.PI * (3 - Math.sqrt(5));
   for (let i = 0; i < samples; i++) {
@@ -25,47 +36,66 @@ interface NodeSphereProps {
   onDrag: (id: string, pos: [number, number, number]) => void;
   isCurrentUser: boolean;
   sphereRadius: number;
+  hasTag?: boolean;
+  isHighlighted?: boolean;
 }
-const NodeSphere: FC<NodeSphereProps> = ({ id, position, onClick, onDrag, isCurrentUser, sphereRadius }) => {
+const NodeSphere: FC<NodeSphereProps> = ({ id, position, onClick, onDrag, isCurrentUser, sphereRadius, hasTag = false, isHighlighted = false }) => {
   const ref = useRef<any>(null);
   const dragging = useRef(false);
-  useFrame(() => { ref.current.rotation.y += 0.01; });
+  useFrame(() => {
+    if (ref.current) {
+      ref.current.rotation.y += 0.01;
+    }
+  });
+  let color = '#00aaff';
+  if (isHighlighted) color = '#ffff00';
+  else if (isCurrentUser) color = '#00ff00';
   return (
     <group position={position}>
       <mesh
         ref={ref}
         onClick={onClick}
-        onPointerDown={e => { e.stopPropagation(); dragging.current = true; }}
-        onPointerUp={e => { e.stopPropagation(); dragging.current = false; }}
+        onPointerDown={e => { if (isCurrentUser) return; e.stopPropagation(); dragging.current = true; }}
+        onPointerUp={e => { if (isCurrentUser) return; e.stopPropagation(); dragging.current = false; }}
         onPointerMove={e => {
-          if (dragging.current) {
-            e.stopPropagation();
-            const p = e.point;
-            // Project onto sphere surface
-            const len = Math.sqrt(p.x*p.x + p.y*p.y + p.z*p.z) || 1;
-            const newPos: [number, number, number] = [p.x/len*sphereRadius, p.y/len*sphereRadius, p.z/len*sphereRadius];
-            onDrag(id, newPos);
-          }
+          if (isCurrentUser || !dragging.current) return;
+          e.stopPropagation();
+          const p = e.point;
+          // Project onto sphere surface
+          const len = Math.sqrt(p.x*p.x + p.y*p.y + p.z*p.z) || 1;
+          const newPos: [number, number, number] = [p.x/len*sphereRadius, p.y/len*sphereRadius, p.z/len*sphereRadius];
+          onDrag(id, newPos);
         }}
       >
-        <sphereGeometry args={[0.3, 16, 16]} />
-        <meshStandardMaterial color={isCurrentUser ? '#00ff00' : '#00aaff'} />
+        <sphereGeometry args={[isCurrentUser ? 0.5 : 0.3, 16, 16]} />
+        <meshStandardMaterial color={color} />
       </mesh>
       <Html center distanceFactor={10} style={{ pointerEvents: 'none' }}>
         <div style={{ background: 'rgba(0,0,0,0.7)', color: '#fff', padding: '2px 4px', borderRadius: '4px', fontSize: '10px' }}>
           {id}
         </div>
       </Html>
+      {/* Tag badge */}
+      {hasTag && (
+        <Html position={[0, sphereRadius*0.15, 0]} center distanceFactor={10} style={{ pointerEvents: 'none' }}>
+          <span role="img" aria-label="tag" style={{ fontSize: '12px' }}>🏷️</span>
+        </Html>
+      )}
     </group>
   );
 };
 
-const EdgeLine: FC<{ from: [number, number, number]; to: [number, number, number] }> = ({ from, to }) => (
+interface EdgeLineProps {
+  from: [number, number, number];
+  to: [number, number, number];
+  color?: string;
+}
+const EdgeLine: FC<EdgeLineProps> = ({ from, to, color = '#888' }) => (
   <line>
     <bufferGeometry>
       <bufferAttribute attach="attributes-position" args={[new Float32Array([...from, ...to]), 3]} />
     </bufferGeometry>
-    <lineBasicMaterial attach="material" color="#888" />
+    <lineBasicMaterial attach="material" color={color} />
   </line>
 );
 
@@ -76,9 +106,13 @@ interface Props {
   autoRotate?: boolean;
   currentUserId: string;
   sphereRadius?: number;
+  showAllEdges?: boolean;
+  taggedNodeIds?: string[];
+  highlightNodeIds?: string[];
+  highlightEdgePairs?: [string, string][];
 }
 
-export default function GraphCanvas({ nodes, edges, onNodeClick, autoRotate = false, currentUserId, sphereRadius = 5 }: Props) {
+export default function GraphCanvas({ nodes, edges, onNodeClick, autoRotate = false, currentUserId, sphereRadius = 5, showAllEdges = false, taggedNodeIds = [], highlightNodeIds = [], highlightEdgePairs = [] }: Props) {
   // Initial radial positions: center + sphere
   const positions = useMemo(() => {
     const map: Record<string, [number, number, number]> = {};
@@ -104,16 +138,27 @@ export default function GraphCanvas({ nodes, edges, onNodeClick, autoRotate = fa
   };
 
   return (
-    <Canvas style={{ background: '#111' }} camera={{ position: [0, 0, sphereRadius * 2], fov: 50 }}>
+    <Canvas style={{ background: '#111', width: '100%', height: '100%' }} camera={{ position: [0, 0, sphereRadius * 2], fov: 50 }}>
       <group>
-        {/* Edges to center for each friend */}
+        {/* Edges */}
         {edges.map((e, i) => {
-          // Only show edges radiating from/to center
-          if (e.from !== currentUserId && e.to !== currentUserId) return null;
-          const otherId = e.from === currentUserId ? e.to : e.from;
-          const fromPos = dragPositions[currentUserId];
-          const toPos = dragPositions[otherId];
-          return <EdgeLine key={i} from={fromPos} to={toPos} />;
+          // Determine if edge highlighted
+          const isHighlighted = highlightEdgePairs.some(
+            ([a, b]) => (a === e.from && b === e.to) || (a === e.to && b === e.from)
+          );
+          const color = isHighlighted ? '#ffff00' : '#888';
+          // If not showing all, only render radial edges
+          if (!showAllEdges) {
+            if (e.from !== currentUserId && e.to !== currentUserId) return null;
+            const otherId = e.from === currentUserId ? e.to : e.from;
+            const fromPos = dragPositions[currentUserId];
+            const toPos = dragPositions[otherId];
+            return <EdgeLine key={i} from={fromPos} to={toPos} color={color} />;
+          }
+          // showAllEdges: render every edge connecting any two nodes
+          const fromPos = dragPositions[e.from];
+          const toPos = dragPositions[e.to];
+          return <EdgeLine key={i} from={fromPos} to={toPos} color={color} />;
         })}
         {/* Nodes */}
         {nodes.map(n => (
@@ -125,6 +170,8 @@ export default function GraphCanvas({ nodes, edges, onNodeClick, autoRotate = fa
             onDrag={handleNodeDrag}
             isCurrentUser={n.id === currentUserId}
             sphereRadius={sphereRadius}
+            hasTag={taggedNodeIds.includes(n.id)}
+            isHighlighted={highlightNodeIds.includes(n.id)}
           />
         ))}
       </group>

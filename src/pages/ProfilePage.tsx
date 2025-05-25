@@ -1,9 +1,11 @@
-import React, { FC } from 'react';
+import React, { FC, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { useGraphData } from '../hooks/useGraphData';
-import { Post, usePostData } from '../hooks/usePostData';
+import { usePostData } from '../hooks/usePostData';
+import { useChatData } from '../hooks/useChatData';
 
-const FeedContainer = styled.div`
+const Container = styled.div`
   max-width: 600px;
   margin: 0 auto;
   padding: 16px;
@@ -17,44 +19,72 @@ const PostItem = styled.div`
   background: white;
 `;
 
-interface HomePageProps {
+interface ProfilePageProps {
   user: any;
   users: any[];
-  postData: ReturnType<typeof usePostData>;
   graph: ReturnType<typeof useGraphData>;
+  postData: ReturnType<typeof usePostData>;
 }
 
-const HomePage: FC<HomePageProps> = ({ user, users, postData, graph }) => {
+const ProfilePage: FC<ProfilePageProps> = ({ user, users, graph, postData }) => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  if (!id) return <Container>User not found.</Container>;
+
+  const profileUser = users.find(u => u.id === id);
+  if (!profileUser) return <Container>User not found.</Container>;
+
+  // Determine friendship
+  const isFriend = graph.edges.some(
+    e => (e.from === user.id && e.to === id) || (e.from === id && e.to === user.id)
+  );
+
+  // Profile visibility guard
+  const canViewProfile =
+    profileUser.profileVisibility === 'public' ||
+    (profileUser.profileVisibility === 'friends' && isFriend) ||
+    (profileUser.profileVisibility === 'private' && (id === user.id || user.isAdmin));
+
+  if (!canViewProfile) {
+    return <Container>Profile not visible.</Container>;
+  }
+
+  const chatData = useChatData(user.id);
   const { posts, deletePost, toggleLike, addComment } = postData;
-  // Track new comment text per post
-  const [commentInputs, setCommentInputs] = React.useState<Record<string, string>>({});
-  // Track which post's comments are open
-  const [openCommentsPostId, setOpenCommentsPostId] = React.useState<string | null>(null);
-  // Include public posts, friend-only posts if viewer is a friend, and private posts for owner/admin
-  const feedPosts = posts.filter(p => {
+  const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
+  const [openCommentsPostId, setOpenCommentsPostId] = useState<string | null>(null);
+
+  // Filter this user's posts by visibility
+  const profilePosts = posts.filter(p => {
+    if (p.authorId !== id) return false;
     if (p.visibility === 'public') return true;
-    if (p.visibility === 'friends') {
-      return graph.edges.some(
-        e =>
-          (e.from === p.authorId && e.to === user.id) ||
-          (e.from === user.id && e.to === p.authorId)
-      );
-    }
-    if (p.visibility === 'private') {
-      return p.authorId === user.id || user.isAdmin;
-    }
+    if (p.visibility === 'friends') return isFriend || id === user.id || user.isAdmin;
+    if (p.visibility === 'private') return id === user.id || user.isAdmin;
     return false;
   });
-  const sortedPosts = [...feedPosts].sort((a, b) => Number(b.id) - Number(a.id));
+  const sortedPosts = [...profilePosts].sort((a, b) => Number(b.id) - Number(a.id));
 
   return (
-    <FeedContainer>
-      <h2>Home Feed</h2>
-      {sortedPosts.map(p => {
-        const author = users.find(u => u.id === p.authorId);
-        return (
+    <Container>
+      <h2>{profileUser.label}'s Profile</h2>
+      <p>ID: {profileUser.id}</p>
+      {profileUser.id !== user.id && (
+        <button
+          onClick={() => {
+            const cid = chatData.startChat(profileUser.id);
+            navigate(`/chats/${cid}`);
+          }}
+          style={{ marginBottom: '16px' }}
+        >
+          Message
+        </button>
+      )}
+      <h3>Posts</h3>
+      {sortedPosts.length === 0 ? (
+        <p>No posts to show.</p>
+      ) : (
+        sortedPosts.map(p => (
           <PostItem key={p.id}>
-            <p><strong>{author?.label ?? p.authorId}</strong></p>
             <img src={p.imageUrl} alt="Post" style={{ maxWidth: '100%' }} />
             {(user.id === p.authorId || user.isAdmin) && (
               <button onClick={() => deletePost(p.id)} style={{ marginTop: '8px' }}>
@@ -65,10 +95,12 @@ const HomePage: FC<HomePageProps> = ({ user, users, postData, graph }) => {
             <button onClick={() => toggleLike(p.id, user.id)} style={{ fontSize: '12px' }}>
               {p.likes.includes(user.id) ? 'Unlike' : 'Like'}
             </button>
-            <button onClick={() => setOpenCommentsPostId(p.id)} style={{ fontSize: '12px', marginLeft: '8px' }}>
+            <button
+              onClick={() => setOpenCommentsPostId(p.id)}
+              style={{ fontSize: '12px', marginLeft: '8px' }}
+            >
               Comments
             </button>
-            {/* Comments popup card */}
             {openCommentsPostId === p.id && (
               <div style={{ position: 'relative', border: '1px solid #aaa', borderRadius: '8px', padding: '8px', marginTop: '8px', background: '#f9f9f9' }}>
                 <button
@@ -77,7 +109,6 @@ const HomePage: FC<HomePageProps> = ({ user, users, postData, graph }) => {
                 >
                   ×
                 </button>
-                <h5 style={{ margin: '4px 0' }}>Comments</h5>
                 <ul style={{ listStyle: 'none', padding: 0, maxHeight: '150px', overflowY: 'auto' }}>
                   {p.comments.map(c => (
                     <li key={c.id} style={{ fontSize: '12px', marginBottom: '4px' }}>
@@ -107,10 +138,10 @@ const HomePage: FC<HomePageProps> = ({ user, users, postData, graph }) => {
               </div>
             )}
           </PostItem>
-        );
-      })}
-    </FeedContainer>
+        ))
+      )}
+    </Container>
   );
 };
 
-export default HomePage; 
+export default ProfilePage; 
