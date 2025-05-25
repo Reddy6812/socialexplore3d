@@ -104,6 +104,17 @@ export function useGraphData(userId?: string) {
   });
   const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
 
+  // Persist edges on change so connections survive reload
+  useEffect(() => {
+    if (edgesKey) {
+      try {
+        localStorage.setItem(edgesKey, JSON.stringify(edges));
+      } catch (e) {
+        console.error('Failed to persist edges', e);
+      }
+    }
+  }, [edgesKey, edges]);
+
   // Subscribe to real-time friend request and approval events
   useEffect(() => {
     if (!socket) return;
