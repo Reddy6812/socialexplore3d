@@ -125,7 +125,7 @@ export default function App() {
         <Route path="/login" element={<LoginPage onLogin={loginHandler} onSignup={signupHandler} />} />
         <Route path="/" element={user ? <Layout user={user} onLogout={() => setUser(null)} /> : <Navigate to="/login" /> }>
           <Route index element={<Navigate to="home" />} />
-          <Route path="home" element={<HomePage user={user} users={users} postData={postData} />} />
+          <Route path="home" element={<HomePage user={user} users={users} postData={postData} graph={graph} />} />
           <Route path="explorer" element={<ExplorerPage user={user} users={users} graph={graph} postData={postData} />} />
           <Route path="friends" element={<FriendsPage user={user} />} />
           <Route path="settings" element={<SettingsPage user={user} users={users} setUsers={setUsers} />} />
