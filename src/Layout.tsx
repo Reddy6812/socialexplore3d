@@ -25,6 +25,7 @@ import ChatIcon from '@mui/icons-material/Chat';
 import SecurityIcon from '@mui/icons-material/Security';
 import BubbleChartIcon from '@mui/icons-material/BubbleChart';
 import NotificationPanel from './components/NotificationPanel';
+import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 
 const drawerWidth = 240;
 
@@ -40,6 +41,7 @@ export default function Layout({ user, onLogout }: { user: any; onLogout: () => 
     { text: 'Events', path: '/events', icon: <EventIcon /> },
     { text: 'Analytics', path: '/analytics', icon: <BarChartIcon /> },
     { text: 'Settings', path: '/settings', icon: <SettingsIcon /> },
+    { text: 'Snap', path: '/snap', icon: <PhotoCameraIcon /> },
     { text: 'Messages', path: '/chats', icon: <ChatIcon /> },
   ];
   if (user.isAdmin) {

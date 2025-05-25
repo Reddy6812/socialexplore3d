@@ -16,6 +16,7 @@ import FriendRequestsPage from './pages/FriendRequestsPage.tsx';
 import AnalyticsPage from './pages/AnalyticsPage';
 import EventsPage from './pages/EventsPage.tsx';
 import EventPage from './pages/EventPage.tsx';
+import SnapPage from './pages/SnapPage.tsx';
 import { useGraphData, NodeData } from './hooks/useGraphData';
 import { usePostData } from './hooks/usePostData';
 
@@ -142,6 +143,7 @@ export default function App() {
               <Route path="search" element={<SearchPage users={users} graphEdges={graph.edges} currentUserId={user.id} />} />
               <Route path="friends" element={<FriendsPage user={user} />} />
               <Route path="requests" element={<FriendRequestsPage user={user} users={users} graph={graph} />} />
+              <Route path="snap" element={<SnapPage user={user} />} />
               <Route path="events" element={<EventsPage user={user} />} />
               <Route path="events/:id" element={<EventPage user={user} users={users} />} />
               <Route path="analytics" element={<AnalyticsPage user={user} />} />

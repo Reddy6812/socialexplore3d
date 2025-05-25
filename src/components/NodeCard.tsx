@@ -336,54 +336,15 @@ const NodeCard: FC<Props> = ({ node, onClose, nodes, edges, addEdge, removeEdge,
               </ul>
             </>
           )}
-          <h4>Connections</h4>
-          <ul>
-            {otherNodes.map(other => {
-              const isConnected = edges.some(
-                e => (e.from === node.id && e.to === other.id) || (e.from === other.id && e.to === node.id)
-              );
-              return (
-                <li key={other.id}>
-                  {other.label}{' '}
-                  {isConnected ? (
-                    <button onClick={() => removeEdge(node.id, other.id)}>Remove Friend</button>
-                  ) : (
-                    <button onClick={() => sendRequest(node.id, other.id)}>Send Friend Request</button>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-          <h4>Find Mutual Friends</h4>
-          <div>
-            {(() => {
-              const friendIds = edges
-                .filter(e => e.from === node.id || e.to === node.id)
-                .map(e => (e.from === node.id ? e.to : e.from));
-              const friends = nodes.filter(n => friendIds.includes(n.id));
-              if (friends.length === 0) {
-                return <p>No friends to select</p>;
-              }
-              return (
-                <>
-                  <select value={selectedFriend} onChange={e => setSelectedFriend(e.target.value)}>
-                    <option value="" disabled>Select friend</option>
-                    {friends.map(f => (
-                      <option key={f.id} value={f.id}>{f.label}</option>
-                    ))}
-                  </select>
-                  <button onClick={findMutual} disabled={!selectedFriend}>Show Mutual</button>
-                </>
-              );
-            })()}
+          {/* Button to view all friends */}
+          <div style={{ textAlign: 'center', marginTop: '16px' }}>
+            <button
+              onClick={() => { onClose(); navigate('/friends'); }}
+              style={{ fontSize: '14px' }}
+            >
+              View Friends
+            </button>
           </div>
-          {mutualList.length > 0 && (
-            <ul>
-              {mutualList.map(m => (
-                <li key={m.id}>{m.label} ({m.id})</li>
-              ))}
-            </ul>
-          )}
         </>
       )}
     </Card>

@@ -1,5 +1,5 @@
 import React, { FC } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, CircleMarker } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { NodeData } from '../hooks/useGraphData';
@@ -17,9 +17,10 @@ L.Marker.prototype.options.icon = DefaultIcon;
 interface MapViewProps {
   nodes: NodeData[];
   onMarkerClick?: (node: NodeData) => void;
+  selectedNodeId?: string;
 }
 
-const MapView: FC<MapViewProps> = ({ nodes, onMarkerClick }) => {
+const MapView: FC<MapViewProps> = ({ nodes, onMarkerClick, selectedNodeId }) => {
   // Center map on first node with geo, or fallback
   const withGeo = nodes.filter(n => n.geo);
   const center: [number, number] = withGeo.length > 0 ? withGeo[0].geo! : [0, 0];
@@ -27,15 +28,21 @@ const MapView: FC<MapViewProps> = ({ nodes, onMarkerClick }) => {
     <MapContainer center={center} zoom={5} style={{ width: '100%', height: '100%' }}>
       <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
       {withGeo.map(n => (
-        <Marker
-          key={n.id}
-          position={n.geo!}
-          eventHandlers={
-            onMarkerClick ? { click: () => onMarkerClick(n) } : {}
-          }
-        >
-          <Popup><strong>{n.label}</strong></Popup>
-        </Marker>
+        <React.Fragment key={n.id}>
+          <Marker
+            position={n.geo!}
+            eventHandlers={onMarkerClick ? { click: () => onMarkerClick(n) } : {}}
+          >
+            <Popup><strong>{n.label}</strong></Popup>
+          </Marker>
+          {n.id === selectedNodeId && (
+            <CircleMarker
+              center={n.geo!}
+              pathOptions={{ color: 'red', weight: 3 }}
+              radius={15}
+            />
+          )}
+        </React.Fragment>
       ))}
     </MapContainer>
   );

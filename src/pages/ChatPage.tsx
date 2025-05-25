@@ -2,6 +2,8 @@ import React, { FC, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import styled from 'styled-components';
 import { useChatData, Chat } from '../hooks/useChatData';
+import IconButton from '@mui/material/IconButton';
+import VideocamIcon from '@mui/icons-material/Videocam';
 
 interface ChatPageProps {
   user: any;
@@ -53,7 +55,7 @@ const ChatPage: FC<ChatPageProps> = ({ user, users }) => {
           );
         })}
       </MessagesContainer>
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
         {/* Voice recorder button */}
         <button
           onClick={async () => {
@@ -83,6 +85,14 @@ const ChatPage: FC<ChatPageProps> = ({ user, users }) => {
         >
           {isRecording ? 'Stop Rec' : 'Record Voice'}
         </button>
+        {/* Video call button */}
+        <IconButton
+          onClick={() => { console.log('Initiate video call to chat', chat?.id); }}
+          size="small"
+          title="Video Call"
+        >
+          <VideocamIcon fontSize="small" />
+        </IconButton>
         <input
           type="text"
           value={input}

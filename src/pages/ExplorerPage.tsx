@@ -201,7 +201,12 @@ const ExplorerPage: FC<ExplorerPageProps> = ({ user, users, graph, postData }) =
           )}
         </div>
         <div style={{ flex: 1, borderLeft: '1px solid #444' }}>
-          <MapView nodes={nodesForCanvas} onMarkerClick={n => setSelected(n)} />
+          {/* Show all friends' addresses on the map: pass full graph.nodes */}
+          <MapView
+            nodes={graph.nodes}
+            onMarkerClick={n => setSelected(n)}
+            selectedNodeId={selected?.id}
+          />
         </div>
       </div>
     </div>
