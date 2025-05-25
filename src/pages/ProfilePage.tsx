@@ -69,15 +69,38 @@ const ProfilePage: FC<ProfilePageProps> = ({ user, users, graph, postData }) => 
       <h2>{profileUser.label}'s Profile</h2>
       <p>ID: {profileUser.id}</p>
       {profileUser.id !== user.id && (
-        <button
-          onClick={() => {
-            const cid = chatData.startChat(profileUser.id);
-            navigate(`/chats/${cid}`);
-          }}
-          style={{ marginBottom: '16px' }}
-        >
-          Message
-        </button>
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+          {/* Message button */}
+          <button
+            onClick={() => {
+              const cid = chatData.startChat(profileUser.id);
+              navigate(`/chats/${cid}`);
+            }}
+            style={{ fontSize: '14px' }}
+          >
+            Message
+          </button>
+          {/* Friend request / Disconnect button */}
+          {isFriend ? (
+            <button
+              onClick={() => {
+                graph.removeEdge(user.id, profileUser.id);
+              }}
+              style={{ fontSize: '14px' }}
+            >
+              Disconnect
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                graph.sendFriendRequest(user.id, profileUser.id);
+              }}
+              style={{ fontSize: '14px' }}
+            >
+              Add Friend
+            </button>
+          )}
+        </div>
       )}
       <h3>Posts</h3>
       {sortedPosts.length === 0 ? (

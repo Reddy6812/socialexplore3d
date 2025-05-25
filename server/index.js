@@ -45,6 +45,11 @@ io.on('connection', socket => {
     // broadcast to others in the room
     socket.broadcast.to('global').emit('friendRequest', req);
   });
+
+  // relay friend removal events
+  socket.on('friendRemove', (upd) => {
+    socket.broadcast.to('global').emit('friendRemove', upd);
+  });
 });
 
 // Fallback: serve index.html for any other routes

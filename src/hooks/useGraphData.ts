@@ -104,17 +104,41 @@ export function useGraphData(userId?: string) {
   });
   const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
 
-  // Subscribe to real-time incoming friend requests
+  // Subscribe to real-time friend request and approval events
   useEffect(() => {
     if (!socket) return;
-    const handler = (req: FriendRequest) => {
-      if (req.to === userId) {
-        setFriendRequests(prev => [...prev, req]);
+    const handler = (req: any) => {
+      if (req.approved) {
+        // friend request approved: add friendship and remove pending request
+        setFriendRequests(prev => prev.filter(r => r.id !== req.id));
+        setEdges(prev => {
+          if (prev.some(e => (e.from === req.from && e.to === req.to) || (e.from === req.to && e.to === req.from))) {
+            return prev;
+          }
+          return [...prev, { from: req.from, to: req.to }];
+        });
+      } else {
+        // new friend request: only show to recipient
+        if (req.to === userId) {
+          setFriendRequests(prev => [...prev, req]);
+        }
       }
     };
     socket.on('friendRequest', handler);
     return () => { socket.off('friendRequest', handler); };
   }, [socket, userId]);
+
+  // Subscribe to real-time friend removal events
+  useEffect(() => {
+    if (!socket) return;
+    const handler = (upd: { from: string; to: string }) => {
+      setEdges(prev => prev.filter(e =>
+        !((e.from === upd.from && e.to === upd.to) || (e.from === upd.to && e.to === upd.from))
+      ));
+    };
+    socket.on('friendRemove', handler);
+    return () => { socket.off('friendRemove', handler); };
+  }, [socket]);
 
   /** Add a new node (friend) with auto-generated unique ID */
   const addNode = (node: Omit<NodeData, 'id' | 'position'>) => {
@@ -141,6 +165,8 @@ export function useGraphData(userId?: string) {
     setEdges(prev =>
       prev.filter(e => !((e.from === from && e.to === to) || (e.from === to && e.to === from)))
     );
+    // broadcast removal to other clients
+    socket?.emit('friendRemove', { from, to });
   };
 
   /** Send a friend request from one node to another */

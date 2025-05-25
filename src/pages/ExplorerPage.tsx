@@ -1,11 +1,10 @@
 import React, { useState, FC } from 'react';
 import GraphCanvas from '../components/GraphCanvas';
 import MapView from '../components/MapView';
-import { initialNodesGlobal, initialEdgesGlobal } from '../hooks/useGraphData';
-import NodeCard from '../components/NodeCard';
 import { useGraphData, NodeData } from '../hooks/useGraphData';
 import { usePostData } from '../hooks/usePostData';
 import { useCollaboration } from '../hooks/useCollaboration';
+import NodeCard from '../components/NodeCard';
 
 interface ExplorerPageProps {
   user: any;
@@ -26,12 +25,11 @@ const ExplorerPage: FC<ExplorerPageProps> = ({ user, users, graph, postData }) =
   // Toggle display of controls
   const [showControls, setShowControls] = useState(true);
 
-  // Compute adjacency map from global and user-specific edges
-  const allEdges = [...initialEdgesGlobal, ...graph.edges];
+  // Compute adjacency map from dynamic graph edges
+  const allEdges = graph.edges;
   const adjacency: Record<string, string[]> = {};
-  // Build node ID set from global and dynamic nodes
-  const allNodeIds = new Set<string>(initialNodesGlobal.map(n => n.id));
-  graph.nodes.forEach(n => allNodeIds.add(n.id));
+  // Build node ID set from graph nodes
+  const allNodeIds = new Set<string>(graph.nodes.map(n => n.id));
   allNodeIds.forEach(id => { adjacency[id] = []; });
   allEdges.forEach(e => {
     adjacency[e.from].push(e.to);
@@ -58,11 +56,8 @@ const ExplorerPage: FC<ExplorerPageProps> = ({ user, users, graph, postData }) =
   };
   const reachable = computeReachable(user.id, degree);
 
-  // Nodes for GraphCanvas: include global and dynamic nodes within reachable set
-  const staticNodes = initialNodesGlobal.filter(n => reachable.has(n.id));
-  const dynamicNodes = graph.nodes.filter(n => !initialNodesGlobal.some(sn => sn.id === n.id) && reachable.has(n.id));
-  const nodesForCanvas = [...staticNodes, ...dynamicNodes];
-  // Edges for GraphCanvas: those connecting reachable nodes
+  // Nodes and edges for GraphCanvas: filter graph data by reachability
+  const nodesForCanvas = graph.nodes.filter(n => reachable.has(n.id));
   const edgesForCanvas = allEdges.filter(e => reachable.has(e.from) && reachable.has(e.to));
 
   // Gather tags from current user's posts
