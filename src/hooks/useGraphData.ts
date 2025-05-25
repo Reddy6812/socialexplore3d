@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 /** Node data with optional contact info and 3D position */
 export interface NodeData {
@@ -11,6 +11,13 @@ export interface NodeData {
 
 /** Edge representing a bidirectional friendship between two node IDs */
 export interface EdgeData {
+  from: string;
+  to: string;
+}
+
+/** Friend request from one node to another */
+export interface FriendRequest {
+  id: string;
   from: string;
   to: string;
 }
@@ -50,8 +57,31 @@ export function useGraphData(userId?: string) {
     );
     initEdges = userEdges;
   }
+  // Persist edges per user, fallback to initial edges for this user
+  const edgesKey = userId ? `socialexplore3d_edges_${userId}` : null;
   const [nodes, setNodes] = useState<NodeData[]>(initNodes);
-  const [edges, setEdges] = useState<EdgeData[]>(initEdges);
+  const [edges, setEdges] = useState<EdgeData[]>(() => {
+    if (edgesKey) {
+      try {
+        const stored = localStorage.getItem(edgesKey);
+        if (stored) return JSON.parse(stored);
+      } catch (e) {
+        console.error('Failed to parse stored edges', e);
+      }
+    }
+    return initEdges;
+  });
+  // Persist edges on change
+  useEffect(() => {
+    if (edgesKey) {
+      try {
+        localStorage.setItem(edgesKey, JSON.stringify(edges));
+      } catch (e) {
+        console.error('Failed to persist edges', e);
+      }
+    }
+  }, [edgesKey, edges]);
+  const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
 
   /** Add a new node (friend) with auto-generated unique ID */
   const addNode = (node: Omit<NodeData, 'id' | 'position'>) => {
@@ -80,6 +110,35 @@ export function useGraphData(userId?: string) {
     );
   };
 
+  /** Send a friend request from one node to another */
+  const sendFriendRequest = (from: string, to: string) => {
+    if (from === to) return;
+    // don't send if already friends
+    if (edges.some(e => (e.from === from && e.to === to) || (e.from === to && e.to === from))) {
+      return;
+    }
+    // don't send duplicate request
+    if (friendRequests.some(r => r.from === from && r.to === to)) {
+      return;
+    }
+    const id = Date.now().toString();
+    setFriendRequests(prev => [...prev, { id, from, to }]);
+  };
+
+  /** Approve a pending friend request by ID */
+  const approveFriendRequest = (requestId: string) => {
+    setFriendRequests(prev => prev.filter(r => r.id !== requestId));
+    const req = friendRequests.find(r => r.id === requestId);
+    if (req) {
+      addEdge(req.from, req.to);
+    }
+  };
+
+  /** Decline a pending friend request by ID */
+  const declineFriendRequest = (requestId: string) => {
+    setFriendRequests(prev => prev.filter(r => r.id !== requestId));
+  };
+
   /** Update node data by id */
   const updateNode = (id: string, data: Partial<Omit<NodeData, 'id' | 'position'>>) => {
     setNodes(prev =>
@@ -87,5 +146,5 @@ export function useGraphData(userId?: string) {
     );
   };
 
-  return { nodes, edges, addNode, addEdge, removeEdge, updateNode };
+  return { nodes, edges, friendRequests, addNode, addEdge, removeEdge, updateNode, sendFriendRequest, approveFriendRequest, declineFriendRequest };
 } 
