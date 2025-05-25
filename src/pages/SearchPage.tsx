@@ -3,7 +3,9 @@ import styled from 'styled-components';
 
 const Container = styled.div`
   padding: 16px;
-  color: white;
+  color: #fff;
+  background: #111;
+  min-height: calc(100vh - 64px);
 `;
 
 const Input = styled.input`
