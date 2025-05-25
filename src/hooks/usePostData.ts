@@ -9,12 +9,22 @@ export interface Post {
 
 export function usePostData() {
   const [posts, setPosts] = useState<Post[]>(() => {
-    const stored = localStorage.getItem('socialexplore3d_posts');
-    return stored ? JSON.parse(stored) : [];
+    try {
+      const stored = localStorage.getItem('socialexplore3d_posts');
+      return stored ? JSON.parse(stored) : [];
+    } catch (e) {
+      console.error('Failed to parse stored posts', e);
+      localStorage.removeItem('socialexplore3d_posts');
+      return [];
+    }
   });
 
   useEffect(() => {
-    localStorage.setItem('socialexplore3d_posts', JSON.stringify(posts));
+    try {
+      localStorage.setItem('socialexplore3d_posts', JSON.stringify(posts));
+    } catch (e) {
+      console.error('Failed to persist posts to localStorage', e);
+    }
   }, [posts]);
 
   /** Add a new post with image URL and visibility */
