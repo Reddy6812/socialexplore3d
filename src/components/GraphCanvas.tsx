@@ -4,6 +4,21 @@ import { OrbitControls, Html } from '@react-three/drei';
 import { NodeData, EdgeData } from '../hooks/useGraphData';
 import { forceSimulation, forceManyBody, forceLink, forceCenter } from 'd3-force';
 
+// Helper to generate Fibonacci sphere positions
+function fibonacciSphere(samples: number) {
+  const points: { x:number,y:number,z:number }[] = [];
+  const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+  for (let i = 0; i < samples; i++) {
+    const y = 1 - (i / (samples - 1)) * 2;
+    const radius = Math.sqrt(1 - y * y);
+    const theta = goldenAngle * i;
+    const x = Math.cos(theta) * radius;
+    const z = Math.sin(theta) * radius;
+    points.push({ x, y, z });
+  }
+  return points;
+}
+
 interface Props {
   nodes: NodeData[];
   edges: EdgeData[];
@@ -11,6 +26,8 @@ interface Props {
   centerTrigger?: boolean;
   centerOnMeTrigger?: number;
   currentUserId?: string;
+  linkDistance?: number;
+  sphereRadius?: number;
 }
 
 const NodeSphere: FC<{ node: NodeData; onClick: () => void; onDrag?: (id: string, x: number, y: number) => void; isCurrentUser?: boolean }> = ({ node, onClick, onDrag, isCurrentUser }) => {
@@ -62,9 +79,9 @@ const EdgeLine: FC<{ edge: EdgeData; nodeMap: Record<string, NodeData> }> = ({ e
   );
 };
 
-export default function GraphCanvas({ nodes, edges, onNodeClick, centerTrigger, centerOnMeTrigger, currentUserId }: Props) {
+export default function GraphCanvas({ nodes, edges, onNodeClick, centerTrigger, centerOnMeTrigger, currentUserId, linkDistance = 2, sphereRadius = 5 }: Props) {
   // Maintain simulation state for dynamic layout
-  const [simNodes, setSimNodes] = useState<NodeData[]>([]);
+  const [simNodes, setSimNodes] = useState<any[]>([]);
   const simulationRef = useRef<any>(null);
   const controlsRef = useRef<any>(null);
 
@@ -76,11 +93,13 @@ export default function GraphCanvas({ nodes, edges, onNodeClick, centerTrigger, 
       controlsRef.current.reset();
     }
     try {
-      // Initialize simulation nodes with random x/y coordinates for free movement
-      const simNodesCopy: any[] = nodes.map(n => ({
+      // Arrange first on Fibonacci sphere, scaled by sphereRadius
+      const spherePts = fibonacciSphere(nodes.length);
+      const simNodesCopy = nodes.map((n, i) => ({
         ...n,
-        x: (Math.random() - 0.5) * 10,
-        y: (Math.random() - 0.5) * 10
+        x: spherePts[i].x * sphereRadius,
+        y: spherePts[i].y * sphereRadius,
+        position: [spherePts[i].x * sphereRadius, spherePts[i].y * sphereRadius, spherePts[i].z * sphereRadius]
       }));
       setSimNodes(simNodesCopy);
       // Stop previous simulation if exists
@@ -90,7 +109,7 @@ export default function GraphCanvas({ nodes, edges, onNodeClick, centerTrigger, 
       // Create force simulation without centering so nodes drift
       simulationRef.current = forceSimulation(simNodesCopy)
         .force('charge', forceManyBody().strength(-50))
-        .force('link', forceLink(linkData).id((d: any) => d.id).distance(2));
+        .force('link', forceLink(linkData).id((d: any) => d.id).distance(linkDistance));
       simulationRef.current.on('tick', () => {
         // Update positions from simulation and trigger render
         setSimNodes(simNodesCopy.map(n => ({
@@ -108,7 +127,7 @@ export default function GraphCanvas({ nodes, edges, onNodeClick, centerTrigger, 
     };
   }, [nodes, edges, centerTrigger]);
 
-  const nodeMap = Object.fromEntries(simNodes.map((n: any) => [n.id, n]));
+  const nodeMap = Object.fromEntries(simNodes.map(n => [n.id, n]));
   // Handler for dragging nodes
   const handleNodeDrag = (id: string, x: number, y: number) => {
     setSimNodes(prev => prev.map(n => n.id === id ? { ...n, x, y, position: [x, y, n.position[2]] } : n));
@@ -127,7 +146,12 @@ export default function GraphCanvas({ nodes, edges, onNodeClick, centerTrigger, 
   }, [centerOnMeTrigger, currentUserId, nodeMap]);
 
   return (
-    <Canvas camera={{ position: [0, 0, 5] }}>
+    <Canvas style={{ background: '#111' }} camera={{ position: [0, 0, sphereRadius*2] }}>
+      {/* Sphere outline */}
+      <mesh>
+        <sphereGeometry args={[sphereRadius, 32, 32]} />
+        <meshBasicMaterial wireframe color="#444" />
+      </mesh>
       <ambientLight intensity={0.5} />
       <pointLight position={[10, 10, 10]} />
       {edges.map((e, i) => {
