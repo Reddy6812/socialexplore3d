@@ -129,6 +129,16 @@ const NodeCard: FC<Props> = ({ node, onClose, nodes, edges, addEdge, removeEdge,
           </button>
         )}
         <button onClick={() => setShowVoicePanel(prev => !prev)} title="Voice Notes">🎙️</button>
+        {/* Button to view full profile */}
+        <button
+          onClick={() => {
+            onClose();
+            navigate(`/profile/${node.id}`);
+          }}
+          title="View Profile"
+        >
+          View Profile
+        </button>
       </div>
       <p>ID: {node.id}</p>
       {/* Profile visibility enforcement */}
@@ -157,9 +167,20 @@ const NodeCard: FC<Props> = ({ node, onClose, nodes, edges, addEdge, removeEdge,
             <p>Friends</p>
           ) : friendRequests.some(r => r.from === userId && r.to === node.id) ? (
             <p>Request Sent</p>
-          ) : (
-            <button onClick={() => sendRequest(userId, node.id)}>Send Friend Request</button>
-          )}
+          ) : (() => {
+            // incoming friend request from this node
+            const incoming = friendRequests.find(r => r.from === node.id && r.to === userId);
+            if (incoming) {
+              return (
+                <>
+                  <button onClick={() => approveRequest(incoming.id)}>Approve</button>{' '}
+                  <button onClick={() => declineRequest(incoming.id)}>Decline</button>
+                </>
+              );
+            }
+            // no relation: send a request
+            return <button onClick={() => sendRequest(userId, node.id)}>Send Friend Request</button>;
+          })()}
         </div>
       )}
       {node.id === userId && (
@@ -327,7 +348,7 @@ const NodeCard: FC<Props> = ({ node, onClose, nodes, edges, addEdge, removeEdge,
                   {isConnected ? (
                     <button onClick={() => removeEdge(node.id, other.id)}>Remove Friend</button>
                   ) : (
-                    <button onClick={() => addEdge(node.id, other.id)}>Add Friend</button>
+                    <button onClick={() => sendRequest(node.id, other.id)}>Send Friend Request</button>
                   )}
                 </li>
               );

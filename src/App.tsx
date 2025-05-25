@@ -12,6 +12,7 @@ import ProfilePage from './pages/ProfilePage';
 import AdminPage from './pages/AdminPage.tsx';
 import ChatsPage from './pages/ChatsPage.tsx';
 import ChatPage from './pages/ChatPage.tsx';
+import FriendRequestsPage from './pages/FriendRequestsPage.tsx';
 import AnalyticsPage from './pages/AnalyticsPage';
 import EventsPage from './pages/EventsPage.tsx';
 import EventPage from './pages/EventPage.tsx';
@@ -140,6 +141,7 @@ export default function App() {
               <Route path="explorer" element={<ExplorerPage user={user} users={users} graph={graph} postData={postData} />} />
               <Route path="search" element={<SearchPage users={users} graphEdges={graph.edges} currentUserId={user.id} />} />
               <Route path="friends" element={<FriendsPage user={user} />} />
+              <Route path="requests" element={<FriendRequestsPage user={user} users={users} graph={graph} />} />
               <Route path="events" element={<EventsPage user={user} />} />
               <Route path="events/:id" element={<EventPage user={user} users={users} />} />
               <Route path="analytics" element={<AnalyticsPage user={user} />} />

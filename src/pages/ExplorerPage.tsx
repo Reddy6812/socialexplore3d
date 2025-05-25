@@ -128,6 +128,7 @@ const ExplorerPage: FC<ExplorerPageProps> = ({ user, users, graph, postData }) =
             highlightNodeIds={highlightNodeIds}
             highlightEdgePairs={highlightEdgePairs}
             presenceMap={presenceMap}
+            friendRequests={graph.friendRequests}
             onNodeClick={n => {
               if (pathMode) {
                 setPathEndpoints(prev => {

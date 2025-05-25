@@ -1,7 +1,7 @@
 import React, { FC, useRef, useEffect, useState, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Html } from '@react-three/drei';
-import { NodeData, EdgeData } from '../hooks/useGraphData';
+import { NodeData, EdgeData, FriendRequest } from '../hooks/useGraphData';
 
 // Generate points on a sphere via Fibonacci method
 function fibonacciSphere(samples: number) {
@@ -111,9 +111,10 @@ interface Props {
   highlightNodeIds?: string[];
   highlightEdgePairs?: [string, string][];
   presenceMap?: Record<string, string | null>;
+  friendRequests?: FriendRequest[];
 }
 
-export default function GraphCanvas({ nodes, edges, onNodeClick, autoRotate = false, currentUserId, sphereRadius = 5, showAllEdges = false, taggedNodeIds = [], highlightNodeIds = [], highlightEdgePairs = [], presenceMap = {} }: Props) {
+export default function GraphCanvas({ nodes, edges, onNodeClick, autoRotate = false, currentUserId, sphereRadius = 5, showAllEdges = false, taggedNodeIds = [], highlightNodeIds = [], highlightEdgePairs = [], presenceMap = {}, friendRequests = [] }: Props) {
   // Initial radial positions: center + sphere
   const positions = useMemo(() => {
     const map: Record<string, [number, number, number]> = {};
@@ -160,6 +161,20 @@ export default function GraphCanvas({ nodes, edges, onNodeClick, autoRotate = fa
           const fromPos = dragPositions[e.from];
           const toPos = dragPositions[e.to];
           return <EdgeLine key={i} from={fromPos} to={toPos} color={color} />;
+        })}
+        {/* Pending friend request edges (dashed) */}
+        {friendRequests.map((req, idx) => {
+          const fromPos = dragPositions[req.from];
+          const toPos = dragPositions[req.to];
+          return (
+            // @ts-ignore: using three-fiber line element
+            <line key={'req'+idx} onUpdate={self => self.computeLineDistances()}>
+              <bufferGeometry>
+                <bufferAttribute attach="attributes-position" args={[new Float32Array([...fromPos, ...toPos]), 3]} />
+              </bufferGeometry>
+              <lineDashedMaterial attach="material" color="#ff0" dashSize={0.1} gapSize={0.1} />
+            </line>
+          );
         })}
         {/* Nodes */}
         {nodes.map(n => (

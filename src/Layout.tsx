@@ -11,10 +11,13 @@ import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
 import MenuIcon from '@mui/icons-material/Menu';
+import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
+import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import HomeIcon from '@mui/icons-material/Home';
 import SearchIcon from '@mui/icons-material/Search';
 import ExploreIcon from '@mui/icons-material/Explore';
 import PeopleIcon from '@mui/icons-material/People';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import EventIcon from '@mui/icons-material/Event';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import SettingsIcon from '@mui/icons-material/Settings';
@@ -33,6 +36,7 @@ export default function Layout({ user, onLogout }: { user: any; onLogout: () => 
     { text: 'Search', path: '/search', icon: <SearchIcon /> },
     { text: 'Explorer', path: '/explorer', icon: <ExploreIcon /> },
     { text: 'Friends', path: '/friends', icon: <PeopleIcon /> },
+    { text: 'Requests', path: '/requests', icon: <PersonAddIcon /> },
     { text: 'Events', path: '/events', icon: <EventIcon /> },
     { text: 'Analytics', path: '/analytics', icon: <BarChartIcon /> },
     { text: 'Settings', path: '/settings', icon: <SettingsIcon /> },
@@ -46,8 +50,14 @@ export default function Layout({ user, onLogout }: { user: any; onLogout: () => 
     <div style={{ display: 'flex' }}>
       <AppBar position="fixed" sx={{ zIndex: 1201 }}>
         <Toolbar>
-          <IconButton color="inherit" edge="start" onClick={() => setShowPages(prev => !prev)} sx={{ mr: 2 }}>
+          <IconButton color="inherit" edge="start" onClick={() => setShowPages(prev => !prev)} sx={{ mr: 1 }}>
             <MenuIcon />
+          </IconButton>
+          <IconButton color="inherit" onClick={() => navigate(-1)} sx={{ mr: 1 }}>
+            <ArrowBackIosIcon />
+          </IconButton>
+          <IconButton color="inherit" onClick={() => navigate(1)} sx={{ mr: 2 }}>
+            <ArrowForwardIosIcon />
           </IconButton>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
             <BubbleChartIcon sx={{ mr: 1 }} />
