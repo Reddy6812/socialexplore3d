@@ -52,6 +52,14 @@ export function useChatData(currentUserId: string) {
     return () => { socket.off('chatMessage', handler); };
   }, [socket]);
 
+  // Join chat-specific rooms so private messages are scoped correctly
+  useEffect(() => {
+    if (!socket) return;
+    chats.forEach(c => {
+      socket.emit('joinChat', c.id);
+    });
+  }, [socket, chats]);
+
   useEffect(() => {
     try {
       localStorage.setItem(storageKey, JSON.stringify(chats));

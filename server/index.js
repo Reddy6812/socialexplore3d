@@ -21,6 +21,11 @@ io.on('connection', socket => {
     io.to('global').emit('presence', { userId, nodeId: null });
   });
 
+  // join chat-specific rooms for private chats
+  socket.on('joinChat', chatId => {
+    socket.join(chatId);
+  });
+
   socket.on('presence', ({ userId: uid, nodeId }) => {
     io.to('global').emit('presence', { userId: uid, nodeId });
   });
@@ -29,10 +34,10 @@ io.on('connection', socket => {
     if (userId) io.to('global').emit('presence', { userId, nodeId: null });
   });
 
-  // relay chat messages
+  // relay chat messages to chat-specific room
   socket.on('chatMessage', (msg) => {
-    // broadcast to others in the room
-    socket.broadcast.to('global').emit('chatMessage', msg);
+    // broadcast to participants in the chat room except sender
+    socket.broadcast.to(msg.chatId).emit('chatMessage', msg);
   });
 
   // relay friend requests
