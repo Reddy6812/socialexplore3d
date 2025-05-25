@@ -166,6 +166,8 @@ export default function GraphCanvas({ nodes, edges, onNodeClick, autoRotate = fa
         {friendRequests.map((req, idx) => {
           const fromPos = dragPositions[req.from];
           const toPos = dragPositions[req.to];
+          // only draw if both endpoints are in the current graph positions
+          if (!fromPos || !toPos) return null;
           return (
             // @ts-ignore: using three-fiber line element
             <line key={'req'+idx} onUpdate={self => self.computeLineDistances()}>
