@@ -64,9 +64,14 @@ export function useGraphData(userId?: string) {
     if (nodesKey) {
       try {
         const stored = localStorage.getItem(nodesKey);
-        if (stored) return JSON.parse(stored);
+        if (stored) {
+          const parsed = JSON.parse(stored) as NodeData[];
+          // filter out any malformed or null entries
+          return parsed.filter(n => n && typeof n.id === 'string');
+        }
       } catch (e) {
         console.error('Failed to parse stored nodes', e);
+        localStorage.removeItem(nodesKey);
       }
     }
     return initNodes;
