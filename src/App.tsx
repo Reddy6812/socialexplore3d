@@ -130,7 +130,7 @@ export default function App() {
           <Route path="explorer" element={<ExplorerPage user={user} users={users} graph={graph} postData={postData} />} />
           <Route path="search" element={<SearchPage users={users} />} />
           <Route path="friends" element={<FriendsPage user={user} />} />
-          <Route path="settings" element={<SettingsPage user={user} users={users} setUsers={setUsers} />} />
+          <Route path="settings" element={<SettingsPage user={user} users={users} setUsers={setUsers} setCurrentUser={setUser} />} />
           {user?.isAdmin && <Route path="admin" element={<AdminPage user={user} graph={graph} users={users} postData={postData} />} />}
         </Route>
         <Route path="*" element={<Navigate to={user ? "/explorer" : "/login"} />} />
