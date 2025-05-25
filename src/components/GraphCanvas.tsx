@@ -55,22 +55,21 @@ export default function GraphCanvas({ nodes, edges, onNodeClick }: Props) {
   // Initialize and update simulation when nodes or edges change
   useEffect(() => {
     try {
-      // Initialize simulation nodes with x/y coordinates
+      // Initialize simulation nodes with random x/y coordinates for free movement
       const simNodesCopy: any[] = nodes.map(n => ({
         ...n,
-        x: n.position[0],
-        y: n.position[1]
+        x: (Math.random() - 0.5) * 10,
+        y: (Math.random() - 0.5) * 10
       }));
       setSimNodes(simNodesCopy);
       // Stop previous simulation if exists
       if (simulationRef.current) simulationRef.current.stop();
       // Build link data for d3-force
       const linkData = edges.map(e => ({ source: e.from, target: e.to }));
-      // Create force simulation
+      // Create force simulation without centering so nodes drift
       simulationRef.current = forceSimulation(simNodesCopy)
         .force('charge', forceManyBody().strength(-50))
-        .force('link', forceLink(linkData).id((d: any) => d.id).distance(2))
-        .force('center', forceCenter(0, 0));
+        .force('link', forceLink(linkData).id((d: any) => d.id).distance(2));
       simulationRef.current.on('tick', () => {
         // Update positions from simulation and trigger render
         setSimNodes(simNodesCopy.map(n => ({
