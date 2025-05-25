@@ -2,6 +2,8 @@ const express = require('express');
 const path = require('path');
 const http = require('http');
 const { Server } = require('socket.io');
+require('dotenv').config();
+const neo4j = require('neo4j-driver');
 
 const app = express();
 // Serve static files from the Vite build
@@ -9,6 +11,86 @@ app.use(express.static(path.join(__dirname, '../dist')));
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: { origin: '*' }
+});
+
+const driver = neo4j.driver(
+  process.env.NEO4J_URI,
+  neo4j.auth.basic(process.env.NEO4J_USER, process.env.NEO4J_PASSWORD)
+);
+
+// REST API setup
+app.use(express.json());
+const { createUser, getUser, deleteAll } = require('./services/userService');
+const { sendFriendRequest, acceptFriendRequest, declineFriendRequest, getFriends, getPendingRequests } = require('./services/friendService');
+
+// User endpoints
+app.post('/api/users', async (req, res) => {
+  try {
+    const { id, name } = req.body;
+    const user = await createUser(id, name);
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/users/:id', async (req, res) => {
+  try {
+    const user = await getUser(req.params.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Friendship endpoints
+app.post('/api/friend-request', async (req, res) => {
+  try {
+    const { fromId, toId } = req.body;
+    await sendFriendRequest(fromId, toId);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/friend-accept', async (req, res) => {
+  try {
+    const { fromId, toId } = req.body;
+    await acceptFriendRequest(fromId, toId);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/friend-decline', async (req, res) => {
+  try {
+    const { fromId, toId } = req.body;
+    await declineFriendRequest(fromId, toId);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/users/:id/friends', async (req, res) => {
+  try {
+    const list = await getFriends(req.params.id);
+    res.json(list);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/users/:id/requests', async (req, res) => {
+  try {
+    const list = await getPendingRequests(req.params.id);
+    res.json(list);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 io.on('connection', socket => {
@@ -78,4 +160,10 @@ app.get(/.*/, (req, res) => {
 });
 
 const PORT = process.env.PORT || 4000;
-server.listen(PORT, () => console.log(`Collaboration server listening on port ${PORT}`)); 
+server.listen(PORT, () => console.log(`Collaboration server listening on port ${PORT}`));
+
+// Close Neo4j driver on process exit
+process.on('SIGINT', async () => {
+  await driver.close();
+  process.exit();
+}); 

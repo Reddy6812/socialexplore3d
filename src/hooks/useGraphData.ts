@@ -61,8 +61,8 @@ export function useGraphData(userId?: string) {
     );
     initEdges = userEdges;
   }
-  // Persist nodes per user; admin uses in-memory initial nodes
-  const nodesKey = userId ? `socialexplore3d_nodes_${userId}` : null;
+  // Persist nodes per user or globally for admin
+  const nodesKey = userId ? `socialexplore3d_nodes_${userId}` : 'socialexplore3d_nodes_global';
   const [nodes, setNodes] = useState<NodeData[]>(() => {
     if (nodesKey) {
       try {
