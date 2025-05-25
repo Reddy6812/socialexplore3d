@@ -5,6 +5,7 @@ import { initialNodesGlobal, initialEdgesGlobal } from '../hooks/useGraphData';
 import NodeCard from '../components/NodeCard';
 import { useGraphData, NodeData } from '../hooks/useGraphData';
 import { usePostData } from '../hooks/usePostData';
+import { useCollaboration } from '../hooks/useCollaboration';
 
 interface ExplorerPageProps {
   user: any;
@@ -15,6 +16,7 @@ interface ExplorerPageProps {
 
 const ExplorerPage: FC<ExplorerPageProps> = ({ user, users, graph, postData }) => {
   const [selected, setSelected] = useState<NodeData | null>(null);
+  const { presenceMap, setPresence } = useCollaboration(user.id);
   const [autoRotate, setAutoRotate] = useState(false);
   const [pathMode, setPathMode] = useState(false);
   const [pathEndpoints, setPathEndpoints] = useState<string[]>([]);
@@ -130,6 +132,7 @@ const ExplorerPage: FC<ExplorerPageProps> = ({ user, users, graph, postData }) =
             taggedNodeIds={taggedNodeIds}
             highlightNodeIds={highlightNodeIds}
             highlightEdgePairs={highlightEdgePairs}
+            presenceMap={presenceMap}
             onNodeClick={n => {
               if (pathMode) {
                 setPathEndpoints(prev => {
@@ -171,6 +174,8 @@ const ExplorerPage: FC<ExplorerPageProps> = ({ user, users, graph, postData }) =
                 });
               } else {
                 setSelected(prev => (prev?.id === n.id ? null : n));
+                // broadcast presence on this node
+                setPresence(n.id);
               }
             }}
           />

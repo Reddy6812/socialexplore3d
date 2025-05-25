@@ -110,9 +110,10 @@ interface Props {
   taggedNodeIds?: string[];
   highlightNodeIds?: string[];
   highlightEdgePairs?: [string, string][];
+  presenceMap?: Record<string, string | null>;
 }
 
-export default function GraphCanvas({ nodes, edges, onNodeClick, autoRotate = false, currentUserId, sphereRadius = 5, showAllEdges = false, taggedNodeIds = [], highlightNodeIds = [], highlightEdgePairs = [] }: Props) {
+export default function GraphCanvas({ nodes, edges, onNodeClick, autoRotate = false, currentUserId, sphereRadius = 5, showAllEdges = false, taggedNodeIds = [], highlightNodeIds = [], highlightEdgePairs = [], presenceMap = {} }: Props) {
   // Initial radial positions: center + sphere
   const positions = useMemo(() => {
     const map: Record<string, [number, number, number]> = {};
