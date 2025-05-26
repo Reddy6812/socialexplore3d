@@ -19,6 +19,7 @@ import EventPage from './pages/EventPage.tsx';
 import SnapPage from './pages/SnapPage.tsx';
 import { useGraphData, NodeData } from './hooks/useGraphData';
 import { usePostData } from './hooks/usePostData';
+import { createUserApi } from './api/graphApi';
 
 // Define user type
 interface AppUser {
@@ -109,6 +110,8 @@ export default function App() {
     const found = users.find(u => u.email === email && u.password === password);
     if (found) {
       setUser(found);
+      // ensure user exists in DB
+      createUserApi(found.id, found.label).catch(err => console.error('Failed to sync user to DB', err));
       return true;
     }
     return false;
@@ -123,6 +126,8 @@ export default function App() {
     const id = Date.now().toString();
     const newUser: AppUser = { id, email, password, label, showConnections: true, profileVisibility: 'public', isAdmin: false };
     setUsers(prev => [...prev, newUser]);
+    // persist new user to DB
+    createUserApi(id, label).catch(err => console.error('Failed to create user in DB', err));
     // Create node in graph for this user
     addNode({ label, phone, address });
     setUser({ ...newUser });
