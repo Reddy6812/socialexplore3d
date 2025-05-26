@@ -161,16 +161,15 @@ export function useGraphData(userId?: string) {
         // friend request approved: add friendship and remove pending request
         setFriendRequests(prev => prev.filter(r => r.id !== req.id));
         setEdges(prev => {
-          if (prev.some(e => (e.from === req.from && e.to === req.to) || (e.from === req.to && e.to === req.from))) {
-            return prev;
-          }
+          if (prev.some(e => (e.from === req.from && e.to === req.to) || (e.from === req.to && e.to === req.from))) return prev;
           return [...prev, { from: req.from, to: req.to }];
         });
+      } else if (req.declined) {
+        // friend request declined: remove pending request
+        setFriendRequests(prev => prev.filter(r => r.id !== req.id));
       } else {
         // new friend request: only show to recipient
-        if (req.to === userId) {
-          setFriendRequests(prev => [...prev, req]);
-        }
+        if (req.to === userId) setFriendRequests(prev => [...prev, req]);
       }
     };
     socket.on('friendRequest', handler);
@@ -236,7 +235,7 @@ export function useGraphData(userId?: string) {
     }
     const id = `${from}-${to}`;
     setFriendRequests(prev => [...prev, { id, from, to }]);
-    // broadcast to others in the room
+    // notify other clients
     socket?.emit('friendRequest', { id, from, to });
   };
 
@@ -251,6 +250,8 @@ export function useGraphData(userId?: string) {
     }
     setFriendRequests(prev => prev.filter(r => r.id !== requestId));
     addEdge(req.from, req.to);
+    // notify other clients
+    socket?.emit('friendRequest', { id: req.id, from: req.from, to: req.to, approved: true });
   };
 
   /** Decline a friend request */
@@ -263,6 +264,8 @@ export function useGraphData(userId?: string) {
       console.error('API decline request failed', err);
     }
     setFriendRequests(prev => prev.filter(r => r.id !== requestId));
+    // notify other clients
+    socket?.emit('friendRequest', { id: req.id, from: req.from, to: req.to, declined: true });
   };
 
   /** Update node data by id */
