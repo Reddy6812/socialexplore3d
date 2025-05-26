@@ -3,7 +3,7 @@ const path = require('path');
 const http = require('http');
 const { Server } = require('socket.io');
 require('dotenv').config();
-const neo4j = require('neo4j-driver');
+const driver = require('./db');
 
 const app = express();
 // Serve static files from the Vite build
@@ -12,11 +12,6 @@ const server = http.createServer(app);
 const io = new Server(server, {
   cors: { origin: '*' }
 });
-
-const driver = neo4j.driver(
-  process.env.NEO4J_URI,
-  neo4j.auth.basic(process.env.NEO4J_USER, process.env.NEO4J_PASSWORD)
-);
 
 // REST API setup
 app.use(express.json());
