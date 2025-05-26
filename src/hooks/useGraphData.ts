@@ -1,5 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useCollaboration } from './useCollaboration';
+import {
+  getFriendsApi,
+  getPendingRequestsApi,
+  sendFriendRequestApi,
+  acceptFriendRequestApi,
+  declineFriendRequestApi
+} from '../api/graphApi';
 
 /** Node data with optional contact info and 3D position */
 export interface NodeData {
@@ -121,6 +128,31 @@ export function useGraphData(userId?: string) {
     }
   }, [edgesKey, edges]);
 
+  // Load initial data from server
+  useEffect(() => {
+    if (!userId) return;
+    (async () => {
+      try {
+        // fetch friendships
+        const friends = await getFriendsApi(userId);
+        setEdges(friends.map(f => ({ from: userId, to: f.id })));
+        // ensure nodes exist for each friend
+        setNodes(prev => {
+          const existing = new Set(prev.map(n => n.id));
+          const newNodes = friends
+            .filter(f => !existing.has(f.id))
+            .map(f => ({ id: f.id, label: f.name, position: [0, 0, 0] as [number, number, number] }));
+          return [...prev, ...newNodes];
+        });
+        // fetch pending requests
+        const pending = await getPendingRequestsApi(userId);
+        setFriendRequests(pending.map(u => ({ id: `${u.id}-${userId}`, from: u.id, to: userId })));
+      } catch (err) {
+        console.error('Failed to load graph data', err);
+      }
+    })();
+  }, [userId]);
+
   // Subscribe to real-time friend request and approval events
   useEffect(() => {
     if (!socket) return;
@@ -187,7 +219,7 @@ export function useGraphData(userId?: string) {
   };
 
   /** Send a friend request from one node to another */
-  const sendFriendRequest = (from: string, to: string) => {
+  const sendFriendRequest = async (from: string, to: string) => {
     if (from === to) return;
     // don't send if already friends
     if (edges.some(e => (e.from === from && e.to === to) || (e.from === to && e.to === from))) {
@@ -197,24 +229,39 @@ export function useGraphData(userId?: string) {
     if (friendRequests.some(r => r.from === from && r.to === to)) {
       return;
     }
-    const id = Date.now().toString();
-    const request: FriendRequest = { id, from, to };
-    setFriendRequests(prev => [...prev, request]);
-    socket?.emit('friendRequest', request);
-  };
-
-  /** Approve a pending friend request by ID */
-  const approveFriendRequest = (requestId: string) => {
-    setFriendRequests(prev => prev.filter(r => r.id !== requestId));
-    const req = friendRequests.find(r => r.id === requestId);
-    if (req) {
-      addEdge(req.from, req.to);
-      socket?.emit('friendRequest', { ...req, approved: true });
+    try {
+      await sendFriendRequestApi(from, to);
+    } catch (err) {
+      console.error('API friend request failed', err);
     }
+    const id = `${from}-${to}`;
+    setFriendRequests(prev => [...prev, { id, from, to }]);
+    // broadcast to others in the room
+    socket?.emit('friendRequest', { id, from, to });
   };
 
-  /** Decline a pending friend request by ID */
-  const declineFriendRequest = (requestId: string) => {
+  /** Approve a pending friend request */
+  const approveFriendRequest = async (requestId: string) => {
+    const req = friendRequests.find(r => r.id === requestId);
+    if (!req) return;
+    try {
+      await acceptFriendRequestApi(req.from, req.to);
+    } catch (err) {
+      console.error('API accept request failed', err);
+    }
+    setFriendRequests(prev => prev.filter(r => r.id !== requestId));
+    addEdge(req.from, req.to);
+  };
+
+  /** Decline a friend request */
+  const declineFriendRequest = async (requestId: string) => {
+    const req = friendRequests.find(r => r.id === requestId);
+    if (!req) return;
+    try {
+      await declineFriendRequestApi(req.from, req.to);
+    } catch (err) {
+      console.error('API decline request failed', err);
+    }
     setFriendRequests(prev => prev.filter(r => r.id !== requestId));
   };
 

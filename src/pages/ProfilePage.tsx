@@ -4,6 +4,8 @@ import styled from 'styled-components';
 import { useGraphData } from '../hooks/useGraphData';
 import { usePostData } from '../hooks/usePostData';
 import { useChatData } from '../hooks/useChatData';
+import IconButton from '@mui/material/IconButton';
+import ChatIcon from '@mui/icons-material/Chat';
 
 const Container = styled.div`
   max-width: 600px;
@@ -71,15 +73,17 @@ const ProfilePage: FC<ProfilePageProps> = ({ user, users, graph, postData }) => 
       {profileUser.id !== user.id && (
         <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
           {/* Message button */}
-          <button
+          <IconButton
             onClick={() => {
               const cid = chatData.startChat(profileUser.id);
               navigate(`/chats/${cid}`);
             }}
-            style={{ fontSize: '14px' }}
+            title="Message"
+            size="small"
+            sx={{ marginRight: '8px' }}
           >
-            Message
-          </button>
+            <ChatIcon fontSize="small" />
+          </IconButton>
           {/* Friend request / Disconnect button */}
           {isFriend ? (
             <button

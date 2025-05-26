@@ -4,6 +4,8 @@ import { useGraphData, NodeData } from '../hooks/useGraphData';
 import { useChatData } from '../hooks/useChatData';
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
+import IconButton from '@mui/material/IconButton';
+import ChatIcon from '@mui/icons-material/Chat';
 
 const Container = styled.div`
   padding: 16px;
@@ -48,16 +50,17 @@ const FriendsPage: FC<FriendsPageProps> = ({ user }) => {
               <Link to={`/profile/${f.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
                 {f.label} (ID: {f.id})
               </Link>
-              <button
+              <IconButton
                 onClick={() => {
                   const chatId = startChat(f.id);
                   navigate(`/chats/${chatId}`);
                 }}
                 title="Message"
-                style={{ marginLeft: '8px', fontSize: '12px' }}
+                size="small"
+                sx={{ marginLeft: '8px' }}
               >
-                💬
-              </button>
+                <ChatIcon fontSize="small" />
+              </IconButton>
             </li>
           ))}
         </ol>

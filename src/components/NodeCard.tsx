@@ -6,6 +6,8 @@ import PostForm from './PostForm';
 import { useVoiceNoteData } from '../hooks/useVoiceNoteData';
 import { useChatData } from '../hooks/useChatData';
 import { useNavigate } from 'react-router-dom';
+import IconButton from '@mui/material/IconButton';
+import ChatIcon from '@mui/icons-material/Chat';
 
 const Card = styled.div`
   position: absolute;
@@ -117,16 +119,17 @@ const NodeCard: FC<Props> = ({ node, onClose, nodes, edges, addEdge, removeEdge,
       <h3>{node.label}</h3>
       <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
         {node.id !== userId && (
-          <button
+          <IconButton
             onClick={() => {
               const chatId = startChat(node.id);
               onClose();
               navigate(`/chats/${chatId}`);
             }}
             title="Message"
+            size="small"
           >
-            💬
-          </button>
+            <ChatIcon fontSize="small" />
+          </IconButton>
         )}
         <button onClick={() => setShowVoicePanel(prev => !prev)} title="Voice Notes">🎙️</button>
         {/* Button to view full profile */}

@@ -3,6 +3,8 @@ import styled from 'styled-components';
 import { EdgeData } from '../hooks/useGraphData';
 import { useChatData } from '../hooks/useChatData';
 import { useNavigate } from 'react-router-dom';
+import IconButton from '@mui/material/IconButton';
+import ChatIcon from '@mui/icons-material/Chat';
 
 const Container = styled.div`
   padding: 16px;
@@ -73,16 +75,17 @@ const SearchPage: FC<SearchPageProps> = ({ users, graphEdges, currentUserId }) =
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
           >
             <span>{u.label} (ID: {u.id})</span>
-            <button
+            <IconButton
               onClick={() => {
                 const chatId = startChat(u.id);
                 navigate(`/chats/${chatId}`);
               }}
               title="Message"
-              style={{ marginLeft: '8px', fontSize: '12px' }}
+              size="small"
+              sx={{ marginLeft: '8px' }}
             >
-              💬
-            </button>
+              <ChatIcon fontSize="small" />
+            </IconButton>
           </ListItem>
         ))}
       </List>

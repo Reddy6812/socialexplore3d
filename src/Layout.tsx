@@ -42,7 +42,7 @@ export default function Layout({ user, onLogout }: { user: any; onLogout: () => 
     { text: 'Analytics', path: '/analytics', icon: <BarChartIcon /> },
     { text: 'Settings', path: '/settings', icon: <SettingsIcon /> },
     { text: 'Snap', path: '/snap', icon: <PhotoCameraIcon /> },
-    { text: 'Messages', path: '/chats', icon: <ChatIcon /> },
+    { text: 'Messages', path: '/chats', icon: <ChatIcon fontSize="small" /> },
   ];
   if (user.isAdmin) {
     menuItems.push({ text: 'Admin', path: '/admin', icon: <SecurityIcon /> });
