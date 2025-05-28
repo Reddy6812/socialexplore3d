@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useCollaboration } from './useCollaboration';
 import {
+  getUserApi,
   getFriendsApi,
   getPendingRequestsApi,
   sendFriendRequestApi,
@@ -133,17 +134,17 @@ export function useGraphData(userId?: string) {
     if (!userId) return;
     (async () => {
       try {
+        // fetch current user info
+        const me = await getUserApi(userId);
         // fetch friendships
         const friends = await getFriendsApi(userId);
+        // seed nodes: self and direct friends
+        setNodes([
+          { id: me.id, label: me.name, position: [0, 0, 0] as [number, number, number] },
+          ...friends.map(f => ({ id: f.id, label: f.name, position: [0, 0, 0] as [number, number, number] }))
+        ]);
+        // set edges for each friendship
         setEdges(friends.map(f => ({ from: userId, to: f.id })));
-        // ensure nodes exist for each friend
-        setNodes(prev => {
-          const existing = new Set(prev.map(n => n.id));
-          const newNodes = friends
-            .filter(f => !existing.has(f.id))
-            .map(f => ({ id: f.id, label: f.name, position: [0, 0, 0] as [number, number, number] }));
-          return [...prev, ...newNodes];
-        });
         // fetch pending requests
         const pending = await getPendingRequestsApi(userId);
         setFriendRequests(pending.map(u => ({ id: `${u.id}-${userId}`, from: u.id, to: userId })));

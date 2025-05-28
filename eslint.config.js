@@ -4,7 +4,7 @@ import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 
 export default [
-  { ignores: ['dist'] },
+  { ignores: ['dist', '__mocks__'] },
   {
     files: ['**/*.{js,jsx}'],
     languageOptions: {
@@ -28,6 +28,27 @@ export default [
         'warn',
         { allowConstantExport: true },
       ],
+    },
+  },
+  {
+    files: ['server/**/*.js'],
+    languageOptions: {
+      ecmaVersion: 2020,
+      sourceType: 'script',
+      globals: {
+        ...globals.node,
+        ...globals.commonjs,
+        ...globals.mocha,
+      },
+    },
+  },
+  {
+    files: ['vite.config.js'],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+        ...globals.commonjs,
+      },
     },
   },
 ]

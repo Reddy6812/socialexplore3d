@@ -1,7 +1,10 @@
 import type { Config } from '@jest/types';
 
 const config: Config.InitialOptions = {
-  preset: 'ts-jest',
+  transform: {
+    '^.+\\.tsx?$': ['ts-jest', { useESM: true, tsconfig: '<rootDir>/tsconfig.json' }],
+  },
+  extensionsToTreatAsEsm: ['.ts', '.tsx'],
   testEnvironment: 'jsdom',
   moduleNameMapper: {
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',

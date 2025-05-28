@@ -15,7 +15,7 @@ const io = new Server(server, {
 
 // REST API setup
 app.use(express.json());
-const { createUser, getUser, deleteAll } = require('./services/userService');
+const { createUser, getUser } = require('./services/userService');
 const { sendFriendRequest, acceptFriendRequest, declineFriendRequest, getFriends, getPendingRequests } = require('./services/friendService');
 
 // User endpoints

@@ -12,7 +12,7 @@ export function useCollaboration(currentUserId: string) {
 
   useEffect(() => {
     // Use env var for server URL (Vite): VITE_COLLAB_SERVER_URL
-    const serverUrl = (import.meta as any).env.VITE_COLLAB_SERVER_URL || window.location.origin;
+    const serverUrl = process.env.VITE_COLLAB_SERVER_URL || window.location.origin;
     const socket = io(serverUrl, { transports: ['websocket'] });
     socketRef.current = socket;
     socket.emit('join', currentUserId);

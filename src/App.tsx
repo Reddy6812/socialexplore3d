@@ -86,6 +86,12 @@ const SearchPanel = styled.div`
 
 export default function App() {
   const [users, setUsers] = useState<AppUser[]>(initialUsers);
+  // Persist all user accounts in `users` state to the database whenever it changes
+  useEffect(() => {
+    users.forEach(u => {
+      createUserApi(u.id, u.label).catch(err => console.error(`Failed to seed user ${u.id}`, err));
+    });
+  }, [users]);
   const [user, setUser] = useState<AppUser | null>(() => {
     const stored = localStorage.getItem('socialexplore3d_currentUser');
     return stored ? JSON.parse(stored) : null;
@@ -96,6 +102,14 @@ export default function App() {
   const graph = useGraphData(user?.isAdmin ? undefined : user?.id);
   const { addNode } = graph;
   const postData = usePostData();
+
+  // Ensure current user exists in the database on each app mount or refresh
+  useEffect(() => {
+    if (user) {
+      createUserApi(user.id, user.label)
+        .catch(err => console.error('Failed to sync user to DB on init', err));
+    }
+  }, [user]);
 
   useEffect(() => {
     if (user) {

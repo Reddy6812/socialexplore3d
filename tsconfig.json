@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "jsx": "react-jsx",
+    "lib": ["DOM", "ESNext"],
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "baseUrl": "."
+  },
+  "include": ["src", "server", "jest.config.ts"]
+} 
