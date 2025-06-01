@@ -45,3 +45,27 @@ A fun, interactive 3D social graph explorer right in your browser. Imagine a glo
 This project is MIT-licensed. Feel free to open issues or submit pull requests.
 
 Enjoy exploring your social universe in 3D! 🪐
+
+##...........
+<img width="1440" alt="image" src="https://github.com/user-attachments/assets/ad134857-036d-4b80-b8d5-44e1f7c6cb22" />
+<img width="1440" alt="image" src="https://github.com/user-attachments/assets/9fb21ac5-fdc7-4b3a-a451-6501497fdce9" />
+<img width="1440" alt="image" src="https://github.com/user-attachments/assets/61966a5f-ad88-4815-9f1e-504aecd11344" />
+<img width="1440" alt="image" src="https://github.com/user-attachments/assets/48ad6f12-707c-4dfc-9da2-5bc7da3ab6e9" />
+<img width="1440" alt="image" src="https://github.com/user-attachments/assets/f9958a5f-9741-497d-b602-e3322d62d533" />
+<img width="1440" alt="image" src="https://github.com/user-attachments/assets/811f9e4f-5b5c-49e7-8434-8fcae0ec91c0" />
+<img width="1440" alt="image" src="https://github.com/user-attachments/assets/e9b29fef-7e39-44a3-bac4-0bd3da4156bd" />
+<img width="1440" alt="image" src="https://github.com/user-attachments/assets/e956fd54-7f59-4eca-9a05-8573a69972d2" />
+<img width="1440" alt="image" src="https://github.com/user-attachments/assets/c8d47dae-7bbd-4a12-8fc5-f3738bd183af" />
+<img width="1440" alt="image" src="https://github.com/user-attachments/assets/9f67b598-c2d3-4884-8333-bc8c58bff813" />
+<img width="1440" alt="image" src="https://github.com/user-attachments/assets/92c702ed-da68-46ae-a098-35bb052c7a19" />
+
+
+
+
+
+
+
+
+
+
+
