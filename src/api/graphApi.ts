@@ -3,13 +3,18 @@ const BASE_URL = '/api';
 export interface ApiUser {
   id: string;
   name: string;
+  role?: 'general' | 'student' | 'company';
 }
 
-export async function createUserApi(id: string, name: string): Promise<ApiUser> {
+export async function createUserApi(
+  id: string,
+  name: string,
+  role: 'general' | 'student' | 'company' = 'general'
+): Promise<ApiUser> {
   const res = await fetch(`${BASE_URL}/users`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id, name })
+    body: JSON.stringify({ id, name, role })
   });
   if (!res.ok) throw new Error(await res.text());
   return res.json();

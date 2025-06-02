@@ -42,7 +42,14 @@ const Button = styled.button`
 
 interface LoginProps {
   onLogin: (email: string, password: string) => boolean;
-  onSignup: (email: string, password: string, label: string, phone?: string, address?: string) => void;
+  onSignup: (
+    email: string,
+    password: string,
+    label: string,
+    phone?: string,
+    address?: string,
+    role?: 'general' | 'student' | 'company'
+  ) => void;
 }
 
 const Login: FC<LoginProps> = ({ onLogin, onSignup }) => {
@@ -57,6 +64,7 @@ const Login: FC<LoginProps> = ({ onLogin, onSignup }) => {
   const [signupLabel, setSignupLabel] = useState('');
   const [signupPhone, setSignupPhone] = useState('');
   const [signupAddress, setSignupAddress] = useState('');
+  const [signupRole, setSignupRole] = useState<'general' | 'student' | 'company'>('general');
 
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,7 +86,8 @@ const Login: FC<LoginProps> = ({ onLogin, onSignup }) => {
       signupPassword,
       signupLabel.trim(),
       signupPhone.trim() || undefined,
-      signupAddress.trim() || undefined
+      signupAddress.trim() || undefined,
+      signupRole
     );
     navigate('/');
   };
@@ -110,6 +119,11 @@ const Login: FC<LoginProps> = ({ onLogin, onSignup }) => {
             value={signupLabel}
             onChange={e => setSignupLabel(e.target.value)}
           />
+          <select value={signupRole} onChange={e => setSignupRole(e.target.value as 'general' | 'student' | 'company') } style={{ padding: '8px', fontSize: '14px', borderRadius: '4px', border: '1px solid #ccc' }}>
+            <option value="general">General</option>
+            <option value="student">Student</option>
+            <option value="company">Company</option>
+          </select>
           <Input
             type="text"
             placeholder="Phone (optional)"

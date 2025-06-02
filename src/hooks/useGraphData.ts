@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useCollaboration } from './useCollaboration';
 import {
-  getUserApi,
   getFriendsApi,
   getPendingRequestsApi,
   sendFriendRequestApi,
   acceptFriendRequestApi,
   declineFriendRequestApi
 } from '../api/graphApi';
+import { UserRepository } from '../services/userRepository';
+import { UserUseCases } from '../services/userUseCases';
 
 /** Node data with optional contact info and 3D position */
 export interface NodeData {
@@ -51,6 +52,9 @@ export const initialEdgesGlobal: EdgeData[] = [
  * @param userId if provided, only include that user's node and direct friends
  */
 export function useGraphData(userId?: string) {
+  // Initialize user use-case for fetching user details
+  const userRepo = new UserRepository();
+  const userUseCases = new UserUseCases(userRepo);
   const { socket } = useCollaboration(userId!);
   // Determine initial nodes/edges based on logged-in user
   let initNodes = initialNodesGlobal;
@@ -135,7 +139,7 @@ export function useGraphData(userId?: string) {
     (async () => {
       try {
         // fetch current user info
-        const me = await getUserApi(userId);
+        const me = await userUseCases.getUser(userId);
         // fetch friendships
         const friends = await getFriendsApi(userId);
         // seed nodes: self and direct friends

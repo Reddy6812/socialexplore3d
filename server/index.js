@@ -4,6 +4,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 require('dotenv').config();
 const driver = require('./db');
+const { createCompany, getCompanies, getEmployeesForCompany, addEmployee } = require('./services/companyService');
 
 const app = express();
 // Serve static files from the Vite build
@@ -17,12 +18,13 @@ const io = new Server(server, {
 app.use(express.json());
 const { createUser, getUser } = require('./services/userService');
 const { sendFriendRequest, acceptFriendRequest, declineFriendRequest, getFriends, getPendingRequests } = require('./services/friendService');
+const { createJob, getJobsForCompany, deleteJob, applyForJob, getApplicantsForJob } = require('./services/jobService');
 
 // User endpoints
 app.post('/api/users', async (req, res) => {
   try {
-    const { id, name } = req.body;
-    const user = await createUser(id, name);
+    const { id, name, role } = req.body;
+    const user = await createUser(id, name, role);
     res.json(user);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -83,6 +85,95 @@ app.get('/api/users/:id/requests', async (req, res) => {
   try {
     const list = await getPendingRequests(req.params.id);
     res.json(list);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Company endpoints
+app.get('/api/companies', async (req, res) => {
+  try {
+    const list = await getCompanies();
+    res.json(list);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/companies', async (req, res) => {
+  try {
+    const { id, name, industry, location } = req.body;
+    const comp = await createCompany(id, name, industry, location);
+    res.json(comp);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Employee endpoints for a company
+app.get('/api/companies/:id/employees', async (req, res) => {
+  try {
+    const list = await getEmployeesForCompany(req.params.id);
+    res.json(list);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/companies/:id/employees', async (req, res) => {
+  try {
+    const { userId } = req.body;
+    await addEmployee(req.params.id, userId);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Job endpoints
+app.get('/api/companies/:id/jobs', async (req, res) => {
+  try {
+    const jobs = await getJobsForCompany(req.params.id);
+    res.json(jobs);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/companies/:id/jobs', async (req, res) => {
+  try {
+    const { title, description, location } = req.body;
+    const job = await createJob(req.params.id, title, description, location);
+    res.json(job);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/jobs/:id', async (req, res) => {
+  try {
+    await deleteJob(req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Job application endpoints
+app.post('/api/jobs/:id/apply', async (req, res) => {
+  try {
+    const { userId } = req.body;
+    await applyForJob(req.params.id, userId);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/jobs/:id/applicants', async (req, res) => {
+  try {
+    const applicants = await getApplicantsForJob(req.params.id);
+    res.json(applicants);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

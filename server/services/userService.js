@@ -1,12 +1,12 @@
 const driver = require('../db');
 
-// Create a new user node
-async function createUser(id, name) {
+// Create a new user node (with role, defaulting to 'general')
+async function createUser(id, name, role = 'general') {
   const session = driver.session();
   try {
     const result = await session.run(
-      'CREATE (u:User {id: $id, name: $name}) RETURN u',
-      { id, name }
+      'CREATE (u:User {id: $id, name: $name, role: $role}) RETURN u',
+      { id, name, role }
     );
     return result.records[0].get('u').properties;
   } finally {

@@ -2,24 +2,28 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './Layout';
-import LoginPage from './pages/LoginPage.tsx';
-import HomePage from './pages/HomePage.tsx';
-import ExplorerPage from './pages/ExplorerPage.tsx';
-import SettingsPage from './pages/SettingsPage.tsx';
-import SearchPage from './pages/SearchPage.tsx';
-import FriendsPage from './pages/FriendsPage.tsx';
+import LoginPage from './pages/LoginPage';
+import HomePage from './pages/HomePage';
+import ExplorerPage from './pages/ExplorerPage';
+import SettingsPage from './pages/SettingsPage';
+import SearchPage from './pages/SearchPage';
+import FriendsPage from './pages/FriendsPage';
 import ProfilePage from './pages/ProfilePage';
-import AdminPage from './pages/AdminPage.tsx';
-import ChatsPage from './pages/ChatsPage.tsx';
-import ChatPage from './pages/ChatPage.tsx';
-import FriendRequestsPage from './pages/FriendRequestsPage.tsx';
+import AdminPage from './pages/AdminPage';
+import ChatsPage from './pages/ChatsPage';
+import ChatPage from './pages/ChatPage';
+import FriendRequestsPage from './pages/FriendRequestsPage';
 import AnalyticsPage from './pages/AnalyticsPage';
-import EventsPage from './pages/EventsPage.tsx';
-import EventPage from './pages/EventPage.tsx';
-import SnapPage from './pages/SnapPage.tsx';
+import EventsPage from './pages/EventsPage';
+import EventPage from './pages/EventPage';
+import SnapPage from './pages/SnapPage';
 import { useGraphData, NodeData } from './hooks/useGraphData';
 import { usePostData } from './hooks/usePostData';
-import { createUserApi } from './api/graphApi';
+import { UserRepository } from './services/userRepository';
+import { UserUseCases } from './services/userUseCases';
+import CompanyExplorerPage from './pages/CompanyExplorerPage';
+import JobsPage from './pages/JobsPage';
+import JobDetailPage from './pages/JobDetailPage';
 
 // Define user type
 interface AppUser {
@@ -30,14 +34,15 @@ interface AppUser {
   showConnections: boolean;
   profileVisibility: 'public' | 'friends' | 'private';
   isAdmin: boolean;
+  role: 'general' | 'student' | 'company';
 }
 
 // Initial mock users (admin & regular)
 const initialUsers: AppUser[] = [
-  { id: '0', email: 'admin@example.com', password: 'adminpwd', label: 'Admin', showConnections: true, profileVisibility: 'public', isAdmin: true },
-  { id: '1', email: 'alice@example.com', password: 'alicepwd', label: 'Alice', showConnections: true, profileVisibility: 'public', isAdmin: false },
-  { id: '2', email: 'bob@example.com', password: 'bobpwd', label: 'Bob', showConnections: true, profileVisibility: 'public', isAdmin: false },
-  { id: '3', email: 'carol@example.com', password: 'carolpwd', label: 'Carol', showConnections: true, profileVisibility: 'public', isAdmin: false }
+  { id: '0', email: 'admin@example.com', password: 'adminpwd', label: 'Admin', showConnections: true, profileVisibility: 'public', isAdmin: true, role: 'general' },
+  { id: '1', email: 'alice@example.com', password: 'alicepwd', label: 'Alice', showConnections: true, profileVisibility: 'public', isAdmin: false, role: 'general' },
+  { id: '2', email: 'bob@example.com', password: 'bobpwd', label: 'Bob', showConnections: true, profileVisibility: 'public', isAdmin: false, role: 'general' },
+  { id: '3', email: 'carol@example.com', password: 'carolpwd', label: 'Carol', showConnections: true, profileVisibility: 'public', isAdmin: false, role: 'general' }
 ];
 
 const Header = styled.div`
@@ -86,12 +91,9 @@ const SearchPanel = styled.div`
 
 export default function App() {
   const [users, setUsers] = useState<AppUser[]>(initialUsers);
-  // Persist all user accounts in `users` state to the database whenever it changes
-  useEffect(() => {
-    users.forEach(u => {
-      createUserApi(u.id, u.label).catch(err => console.error(`Failed to seed user ${u.id}`, err));
-    });
-  }, [users]);
+  // Initialize user use-case
+  const userRepo = new UserRepository();
+  const userUseCases = new UserUseCases(userRepo);
   const [user, setUser] = useState<AppUser | null>(() => {
     const stored = localStorage.getItem('socialexplore3d_currentUser');
     return stored ? JSON.parse(stored) : null;
@@ -103,13 +105,13 @@ export default function App() {
   const { addNode } = graph;
   const postData = usePostData();
 
-  // Ensure current user exists in the database on each app mount or refresh
+  // Persist all user accounts in `users` state to the database whenever it changes
   useEffect(() => {
-    if (user) {
-      createUserApi(user.id, user.label)
-        .catch(err => console.error('Failed to sync user to DB on init', err));
-    }
-  }, [user]);
+    users.forEach(u => {
+      // seed users with their roles
+      userUseCases.createUser(u.id, u.label, u.role).catch(err => console.error(`Failed to seed user ${u.id}`, err));
+    });
+  }, [users]);
 
   useEffect(() => {
     if (user) {
@@ -125,7 +127,7 @@ export default function App() {
     if (found) {
       setUser(found);
       // ensure user exists in DB
-      createUserApi(found.id, found.label).catch(err => console.error('Failed to sync user to DB', err));
+      userUseCases.createUser(found.id, found.label, found.role).catch(err => console.error('Failed to sync user to DB', err));
       return true;
     }
     return false;
@@ -135,13 +137,13 @@ export default function App() {
     password: string,
     label: string,
     phone?: string,
-    address?: string
+    address?: string,
+    role: 'general' | 'student' | 'company' = 'general'
   ) => {
     const id = Date.now().toString();
-    const newUser: AppUser = { id, email, password, label, showConnections: true, profileVisibility: 'public', isAdmin: false };
+    const newUser: AppUser = { id, email, password, label, showConnections: true, profileVisibility: 'public', isAdmin: false, role };
     setUsers(prev => [...prev, newUser]);
-    // persist new user to DB
-    createUserApi(id, label).catch(err => console.error('Failed to create user in DB', err));
+    userUseCases.createUser(id, label, role).catch(err => console.error('Failed to create user in DB', err));
     // Create node in graph for this user
     addNode({ label, phone, address });
     setUser({ ...newUser });
@@ -169,6 +171,9 @@ export default function App() {
               <Route path="profile/:id" element={<ProfilePage user={user} users={users} graph={graph} postData={postData} />} />
               <Route path="chats" element={<ChatsPage user={user} users={users} />} />
               <Route path="chats/:chatId" element={<ChatPage user={user} users={users} />} />
+              <Route path="company-explorer" element={<CompanyExplorerPage userId={user.id} userRole={user.role} />} />
+              <Route path="jobs" element={<JobsPage />} />
+              <Route path="jobs/:id" element={<JobDetailPage />} />
               <Route path="settings" element={<SettingsPage user={user} users={users} setUsers={setUsers} setCurrentUser={setUser} />} />
               {user.isAdmin && (
                 <Route path="admin" element={<AdminPage user={user} graph={graph} users={users} postData={postData} />} />
